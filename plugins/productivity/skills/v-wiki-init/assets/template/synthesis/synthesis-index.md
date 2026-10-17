@@ -9,7 +9,7 @@ updated: __DATE__
 
 # Synthesis index
 
-Catalog of artifacts generated from the wiki on request: reports, briefs, decks, FAQs, timelines. They read from the wiki (starting at [[index]]) and cite it with wikilinks, and the wiki never links back to them. Rules: see "Synthesis layer" in [[CLAUDE.md]].
+Catalog of artifacts generated from the wiki on request: reports, briefs, decks, FAQs, timelines. They read from the wiki (starting at [[index]]) and cite it with wikilinks, and the wiki never links back to them. Rules: see "Synthesis layer" in [[CLAUDE.md]] (procedure: the `wiki-synthesize` skill).
 
 Format: `- [[artifact-name]] - kind, audience, generated YYYY-MM-DD`.
 

@@ -4,7 +4,7 @@
 
 This vault is an **LLM Wiki** (pattern by Andrej Karpathy): knowledge is compiled once into interlinked Markdown pages and kept current, instead of being re-derived from raw documents on every question. The human curates sources and asks questions; **you** do the summarising, cross-referencing, filing and bookkeeping. The vault is opened in **Obsidian**, so everything must work as an Obsidian vault.
 
-Start every session by reading [[index]] (what exists) and the tail of [[log]] (what happened recently).
+Start every session by reading [[index]] (what exists) and the tail of [[log]] (what happened recently). In Claude Code a session-start hook already shows the recent log entries and the raw files not ingested yet.
 
 ## Domain focus
 
@@ -19,7 +19,7 @@ _Tailor this section to the project (filled in when the vault was created; refin
 
 | Layer | Folder | Owner | Rule |
 |---|---|---|---|
-| 1. Raw sources | `raw/` (`raw/assets/` for images and attachments) | Human | **Immutable.** Read, never edit, rename, move or delete. Source of truth. |
+| 1. Raw sources | `raw/` (`raw/assets/` for images and attachments) | Human | **Immutable.** Read, never edit, rename, move or delete. New sources are added with `wiki-capture`. Source of truth. |
 | 2. Wiki | `wiki/`: `index.md`, `log.md`, `overview.md` (the evolving big picture) and `sources/`, `entities/`, `concepts/`, `analyses/` | You | You own it completely. Humans read it; you write it. |
 | 3. Synthesis | `synthesis/` (catalog: `synthesis-index.md`) | You, on request | Artifacts generated *from* the wiki. Only when the user asks. Downstream of the wiki, never the other way round. |
 | Schema | this file, `templates/` (one per page type) | Both | Co-evolved. Propose changes to the user before editing them. |
@@ -39,6 +39,7 @@ Links are what turn a pile of notes into a wiki, and Obsidian's backlinks, graph
 ## Naming and frontmatter
 
 - Filenames: lowercase kebab-case ASCII (`attention-mechanism.md`, `2024-03-board-meeting.md`). They must be valid on macOS **and** Windows: no `\ / : * ? " < > |`, no trailing dot or space, no Windows-reserved names (`con`, `nul`, `aux` ...), and no two files whose names differ only by case.
+- **Never rename, move or delete a wiki page with `mv`, a delete or a Write under a new name**: links resolve by name and would break. Use the `wiki-refactor` skill, which rewrites every link like Obsidian does.
 - Put the human-readable title in frontmatter `title:` (the templates leave it blank) and variants in `aliases:` so Obsidian's link autocomplete finds the page under any name.
 - Every wiki and synthesis page starts with YAML frontmatter (see `templates/`). Common fields: `type`, `title`, `aliases`, `tags`, `created`, `updated`, `status`. Dates are ISO `YYYY-MM-DD`. Always bump `updated` when you change a page.
 - `status`: `draft` (thin or unverified), `stable`, or `stale` (a newer source contradicts or supersedes it).
@@ -62,36 +63,28 @@ Links are what turn a pile of notes into a wiki, and Obsidian's backlinks, graph
 
 ## Workflows
 
-Ingest and lint have full procedures in `.claude/skills/`. Claude Code loads them as the `wiki-ingest` and `wiki-lint` skills; any other agent should read the `SKILL.md` there before starting.
+Full procedures live in `.claude/skills/<name>/SKILL.md`. Claude Code loads them as skills; any other agent should read the matching `SKILL.md` before starting.
 
-### Ingest (user adds a source)
+| Skill | When |
+|---|---|
+| `wiki-capture` | Save a URL, pasted text or outside file into `raw/` |
+| `wiki-ingest` | File a source from `raw/` into the wiki (long sources are read by the `wiki-source-reader` subagent) |
+| `wiki-lint` | Health check, on request or every ~10 ingests: script + judgement, report first, fix on the go-ahead |
+| `wiki-refactor` | Rename, merge or split pages without breaking links |
+| `wiki-research` | Find sources for gaps and open questions, then capture them |
+| `wiki-synthesize` | Produce or regenerate an artifact in `synthesis/` |
 
-Read the source in full, agree on emphasis, write its `wiki/sources/` page, update the 5-15 entity and concept pages it touches with cited claims and two-way links, flag contradictions, then update [[index]], [[overview]] and [[log]]. Procedure: `.claude/skills/wiki-ingest/SKILL.md`.
+**Guardrails (Claude Code hooks, `.claude/settings.json`):** edits, overwrites, moves and deletes in `raw/` are blocked (adding new files is allowed); when a turn changed `wiki/` or `synthesis/`, a Stop hook checks for a log entry, today's `updated:` on changed pages, and lint findings on those pages. If it sends you back, fix what it lists.
 
-### Query (user asks a question)
+### Query (no skill: the everyday case)
 
 1. Read [[index]], then open the relevant pages (use search tools from [[TOOLS]] once the wiki is big). Answer from the wiki, citing pages with wikilinks.
 2. If the wiki can't answer, say so and propose which source to ingest or search for; don't fill gaps from memory without labelling it as such.
 3. If the answer is worth keeping, offer to save it as an `analysis` page (then update [[index]] and [[log]]).
 
-### Lint (health check, on request or every ~10 ingests)
-
-A script checks links, orphans, index, frontmatter, `(unsourced)` claims and stale synthesis; you review contradictions, near-duplicates, stale claims and gaps. Report first, fix only on the user's go-ahead, and log the pass. Procedure: `.claude/skills/wiki-lint/SKILL.md`.
-
 ## Synthesis layer (`synthesis/`)
 
-The wiki answers "what do we know?". The synthesis layer holds **things made from that knowledge**: reports, briefs, decks, FAQs, timelines, comparison tables, study guides, drafts of articles, anything the user asks to be produced.
-
-Rules:
-
-1. **Only on request.** Never generate synthesis artifacts proactively.
-2. **Read the wiki, not `raw/`.** Build from wiki pages so the wiki stays the single source of truth. If something needed is missing, tell the user and propose an ingest first.
-3. **Cite back with wikilinks.** Every factual statement links to the wiki page it came from. List them in frontmatter `based-on:`.
-4. **One-way dependency.** Synthesis depends on the wiki; wiki pages never depend on or link to synthesis. If synthesizing reveals a new insight, save it as an `analysis` page in `wiki/analyses/` and cite that.
-5. **Disposable and reproducible.** Record `generated:` and `based-on:`; an artifact is stale when any based-on page has a newer `updated:`. Regenerate instead of hand-patching.
-6. **Naming:** `synthesis/<kind>-<topic>.md` (e.g. `brief-board-update.md`); subfolders by kind (`reports/`, `decks/`) are fine once there are many.
-7. **Other formats** (`.pptx`, `.xlsx`, `.html`, `.pdf`): save the file in `synthesis/` and add a companion `.md` note with the same stem (e.g. `deck-q3.pptx` + `deck-q3.md`) carrying the frontmatter and backlinks. Slide decks can also be written as Markdown for the Marp plugin.
-8. Register it in [[synthesis-index]] and append to [[log]].
+The wiki answers "what do we know?"; `synthesis/` holds **things made from that knowledge** (reports, briefs, decks, FAQs, timelines, drafts), produced **only on request**, built from wiki pages (never `raw/`), citing them with wikilinks, registered in [[synthesis-index]], and regenerated rather than patched when stale. Wiki pages never link to artifacts. The full rules load from `.claude/rules/synthesis.md` when you touch `synthesis/`; the procedure is the `wiki-synthesize` skill.
 
 ## index.md and log.md
 
@@ -103,15 +96,11 @@ Rules:
 ## [YYYY-MM-DD] <op> | <title>
 ```
 
-`<op>` is one of `ingest`, `query`, `lint`, `synthesize`, `schema`, `setup`. Beneath it, list pages created and updated as wikilinks and note anything unresolved. Never rewrite old entries.
+`<op>` is one of `capture`, `ingest`, `query`, `lint`, `refactor`, `synthesize`, `schema`, `setup`. Beneath it, list pages created and updated as wikilinks and note anything unresolved. Never rewrite old entries (link targets rewritten by `wiki-refactor` are the exception).
 
 ## Environment: macOS and Windows
 
-This vault is used from both macOS and Windows (and works on Linux):
-
-- Check the OS before suggesting commands; [[TOOLS]] covers install and usage for both (`zsh`/`bash` vs PowerShell). Never make a workflow depend on a Unix-only tool without a Windows alternative.
-- Use forward slashes in links and paths inside notes; never absolute paths, drive letters or symlinks. Keep paths short.
-- Files use LF line endings (`.gitattributes` enforces this). Don't convert them.
+The vault is used from both. Check the OS before suggesting commands and never make a workflow depend on a Unix-only tool; [[TOOLS]] has the commands for both and the portability checklist (forward slashes, no absolute paths or symlinks, LF endings).
 
 ## Evolving these rules
 

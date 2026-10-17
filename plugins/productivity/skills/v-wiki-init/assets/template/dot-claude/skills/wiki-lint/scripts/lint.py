@@ -7,6 +7,7 @@ Usage:
   python3 lint.py --json            # machine-readable output
   python3 lint.py --names NAME ...  # is a page name free? (used by wiki-ingest)
   python3 lint.py --new-sources     # raw/ files no source page covers yet (used by wiki-ingest)
+  python3 lint.py --files PATH ...  # only findings about these pages (used after an edit)
 
 Reports only what a script can decide. Contradictions between claims, near-duplicate
 content and gaps need judgement and are left to the model; the "for review" section
@@ -332,6 +333,21 @@ def lint(v: Vault) -> tuple:
     return findings, review
 
 
+def scoped(findings: list, paths: set) -> list:
+    """Findings about the given vault-relative pages, including duplicates that name them."""
+    return [f for f in findings if f["path"] in paths
+            or (f["check"] == "duplicate" and any(p in f["detail"] for p in paths))]
+
+
+def to_rel(root: Path, path: str) -> str:
+    p = Path(path).expanduser()
+    p = p.resolve() if p.is_absolute() else (root / p).resolve()
+    try:
+        return p.relative_to(root).as_posix()
+    except ValueError:
+        return Path(path).as_posix()
+
+
 def names_of(v: Vault, rel: str) -> list:
     fm = v.notes[rel]["fm"] or {}
     return [v.notes[rel]["stem"], *as_list(fm.get("title")), *as_list(fm.get("aliases"))]
@@ -415,6 +431,8 @@ def main() -> int:
     ap.add_argument("--names", nargs="+", metavar="NAME", help="check whether page names are free")
     ap.add_argument("--new-sources", action="store_true",
                     help="list files in raw/ that no source page covers yet")
+    ap.add_argument("--files", nargs="+", metavar="PATH",
+                    help="report only findings about these pages (vault-relative or absolute)")
     args = ap.parse_args()
 
     here = Path(__file__).resolve()
@@ -440,6 +458,17 @@ def main() -> int:
         return 0
 
     findings, review = lint(v)
+    if args.files:
+        findings = scoped(findings, {to_rel(root, f) for f in args.files})
+        if args.json:
+            print(json.dumps(findings, indent=2, ensure_ascii=False))
+        else:
+            for f in findings:
+                where = f["path"] + (f":{f['line']}" if f["line"] else "")
+                print(f"{CHECK_TITLES[f['check']].split(' (')[0]}: {where}  {f['detail']}")
+            print(f"{len(findings)} finding(s) in {len(args.files)} page(s)" if findings
+                  else f"No findings in {len(args.files)} page(s).")
+        return 1 if findings else 0
     if args.json:
         print(json.dumps({"vault": str(root), "pages": len(v.content_pages()),
                           "findings": findings, "review": review}, indent=2, ensure_ascii=False))

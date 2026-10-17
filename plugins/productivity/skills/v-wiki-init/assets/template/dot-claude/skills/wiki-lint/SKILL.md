@@ -39,9 +39,10 @@ Apply only what the user approved, following the rules in `CLAUDE.md`:
 
 - **Orphan:** add it to `index` and link it from the most related page. **Dead-end:** link it to related pages.
 - **Unresolved link:** create the page, correct the link, or record it under "Gaps" in `overview`.
+- **Gaps worth filling:** offer the `wiki-research` skill to find sources for them.
 - **`(unsourced)` claim:** find a source page that supports it, or leave the marker.
 - **Missing or dead index entry:** add or remove the line, keeping the one-line summary current.
-- **Near-duplicate:** merge into one page, put the other name in `aliases:`, and rewrite every link to the removed page (search for `[[old-name` across the vault).
+- **Near-duplicate:** merge the content into one page, then let the `wiki-refactor` skill's script redirect every link, add the old names to `aliases:` and retire the other page. Renames go through it too; never `mv` a wiki page.
 - **Stale synthesis:** regenerate it rather than hand-patching, and only if the user asks; synthesis is produced on request.
 - Never edit, move or delete anything in `raw/`. Bump `updated:` on every page you change.
 

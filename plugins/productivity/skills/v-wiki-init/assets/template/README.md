@@ -24,13 +24,16 @@ Obsidian is preconfigured for wikilinks, `raw/assets` as the attachment folder, 
 
 Open this folder in Claude Code (or another agent that reads `CLAUDE.md` / `AGENTS.md`) and say things like:
 
+- **Capture:** "Save this article: <url>" - the AI stores the original in `raw/`.
 - **Ingest:** "Ingest `raw/some-paper.pdf`" - the AI summarises it and updates 5-15 related pages.
 - **Query:** "What do we know about X? Where do sources disagree?"
 - **Save an answer:** "Save that comparison as an analysis page."
 - **Lint:** "Health-check the wiki."
 - **Synthesize:** "Write a one-page brief for the leadership team from the wiki." (lands in `synthesis/`)
+- **Research:** "Find sources for the open questions."
+- **Refactor:** "Merge `attn` into `attention-mechanism`" or "Rename X to Y" - links are rewritten, nothing breaks.
 
-Ingest and lint are Claude Code skills shipped in `.claude/skills/` (Obsidian hides that folder). The lint checks can also be run by hand: `python3 .claude/skills/wiki-lint/scripts/lint.py`.
+These workflows are Claude Code skills in `.claude/skills/` (Obsidian hides that folder), with a subagent for reading long sources in `.claude/agents/`. `.claude/settings.json` adds hooks: `raw/` is protected from edits and deletes, each session starts with the recent log and pending sources, and a turn that changed the wiki is checked for a log entry, updated dates and broken links before Claude finishes. The hooks need Python 3.9+ (`py`, `python3` or `python`), and on Windows Git for Windows. The lint checks can also be run by hand: `python3 .claude/skills/wiki-lint/scripts/lint.py`.
 
 ## Handy Obsidian add-ons (optional)
 

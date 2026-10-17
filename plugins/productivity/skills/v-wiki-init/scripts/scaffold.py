@@ -279,9 +279,9 @@ def check(dest: Path, foreign=None) -> tuple[list, list]:
     def report(msg, *rels):
         (problems if any(owned(r) for r in rels) else warnings).append(msg)
 
-    # Notes are files outside hidden folders, as in Obsidian. The vault's skills live in the
-    # hidden .claude/ folder, so their SKILL.md files are checked for tokens and stray
-    # wikilinks but don't count as notes (two SKILL.md would otherwise clash as duplicates).
+    # Notes are files outside hidden folders, as in Obsidian. The vault's skills, rules and
+    # agents live in the hidden .claude/ folder, so their .md files are checked for tokens and
+    # stray wikilinks but don't count as notes (two SKILL.md would otherwise clash as duplicates).
     files = lint.walk_files(dest)
     md_files = [rel for rel in files if rel.endswith(".md")]
     stems = {}
@@ -293,12 +293,13 @@ def check(dest: Path, foreign=None) -> tuple[list, list]:
 
     all_names = {Path(rel).name.lower() for rel in files} | set(stems)
     for rel in [*(p.relative_to(dest).as_posix() for p in dest.glob(".obsidian/*.json")),
+                *(p.relative_to(dest).as_posix() for p in dest.glob(".claude/*.json")),
                 *(rel for rel in files if rel.endswith(".json"))]:
         try:
             json.loads((dest / rel).read_text(encoding="utf-8"))
         except ValueError as exc:
             report(f"invalid JSON {rel}: {exc}", rel)
-    skill_docs = [p.relative_to(dest).as_posix() for p in sorted(dest.glob(".claude/skills/*/SKILL.md"))]
+    skill_docs = [p.relative_to(dest).as_posix() for p in sorted(dest.glob(".claude/**/*.md"))]
     for rel in [*md_files, *skill_docs]:
         text = (dest / rel).read_text(encoding="utf-8", errors="replace")
         for token in sorted(set(TOKEN_RE.findall(text))):
@@ -419,6 +420,11 @@ def main() -> int:
         print(f"Obsidian settings from {'bundled profile' if source == PROFILE else source}:")
         for line in import_obsidian(source, dest, set(created)):
             print(f"  - {line}")
+    shipped_settings = TEMPLATE / "dot-claude" / "settings.json"
+    if (".claude/settings.json" in skipped and (dest / ".claude" / "settings.json").read_text(encoding="utf-8")
+            != shipped_settings.read_text(encoding="utf-8")):
+        print("Existing .claude/settings.json kept: the wiki's hooks and permissions are NOT active. "
+              f"Merge them by hand from {shipped_settings}")
     problems, warnings = check(dest, foreign)
     print_results(problems, warnings, rule_conflicts(dest))
     return 1 if problems else 0

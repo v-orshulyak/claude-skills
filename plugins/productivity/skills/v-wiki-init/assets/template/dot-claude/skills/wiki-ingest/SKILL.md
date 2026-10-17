@@ -1,6 +1,6 @@
 ---
 name: wiki-ingest
-description: Ingest a source into this LLM wiki. Read a file from raw/ (PDF, paper, article, web clipping, transcript, meeting notes, export), write its wiki/sources summary page, update or create the entity and concept pages it touches with cited claims, flag contradictions, and update index, overview and log. Use whenever the user says "ingest raw/x.pdf", "add this paper/article to the wiki", "process the new files in raw/", "file this source", "I dropped something in raw", or pastes a URL or text they want captured in the wiki, even if they never say "ingest".
+description: Ingest a source into this LLM wiki. Read a file from raw/ (PDF, paper, article, web clipping, transcript, meeting notes, export), write its wiki/sources summary page, update or create the entity and concept pages it touches with cited claims, flag contradictions, and update index, overview and log. Use whenever the user says "ingest raw/x.pdf", "add this paper/article to the wiki", "process the new files in raw/", "file this source", "I dropped something in raw", or pastes a URL or text they want in the wiki (capture it first with wiki-capture), even if they never say "ingest".
 ---
 
 # Wiki ingest
@@ -11,7 +11,7 @@ Ingest is how knowledge enters the wiki: one source is read once, carefully, and
 
 ## 1. Find the source
 
-- Sources live in `raw/`, the human's immutable layer. If the user gives a URL, pasted text or a file elsewhere, ask whether to save it into `raw/` first (e.g. `raw/2025-03-04-some-article.md`), because every source page must point at an original that stays put.
+- Sources live in `raw/`, the human's immutable layer. If the user gives a URL, pasted text or a file elsewhere, save it into `raw/` first with the `wiki-capture` skill, because every source page must point at an original that stays put.
 - For "ingest the new files", list what no source page covers yet:
   ```bash
   python3 "${CLAUDE_SKILL_DIR}/../wiki-lint/scripts/lint.py" --new-sources
@@ -21,6 +21,8 @@ Ingest is how knowledge enters the wiki: one source is read once, carefully, and
 ## 2. Read it in full and agree on emphasis
 
 Read the whole source; `TOOLS.md` covers PDFs (text extraction, rendering pages with figures, OCR for scans). Then tell the user the 3-5 key takeaways and ask what to emphasise. Skip the question when the user asked for a quiet or batch ingest.
+
+**Long sources** (roughly 30+ pages, or a long transcript): delegate the reading to the `wiki-source-reader` subagent, which reads the whole file and returns metadata, a summary, key claims with locators, and the entities and concepts mapped to existing page names. That keeps the full document out of this conversation. Before you cite a claim from its report, open the cited page or section and check it; the extraction is a map, not a source.
 
 ## 3. Plan the pages and check the names
 
@@ -78,6 +80,6 @@ Run the lint script:
 python3 "${CLAUDE_SKILL_DIR}/../wiki-lint/scripts/lint.py"
 ```
 
-Fix any findings in pages you touched during this ingest. Mention other findings without fixing them; they belong to a lint pass, which needs the user's go-ahead. Then give the user a short summary: pages created and updated, contradictions found, and open questions the source raised.
+Fix any findings in pages you touched during this ingest; `--files <page> ...` limits the report to them. In Claude Code a Stop hook runs the same check on everything changed this turn, plus the log entry and `updated:` dates. Mention other findings without fixing them; they belong to a lint pass, which needs the user's go-ahead. Then give the user a short summary: pages created and updated, contradictions found, and open questions the source raised.
 
-**Batches:** ask about emphasis once for the whole batch (or not at all if it is quiet), process sources one at a time through steps 3-7, write one log entry per source, and run the check once at the end.
+**Batches:** ask about emphasis once for the whole batch (or not at all if it is quiet). Start one `wiki-source-reader` per source in parallel, then process the sources one at a time through steps 3-7 (pages written by an earlier source in the batch change what later ones update), write one log entry per source, and run the check once at the end.

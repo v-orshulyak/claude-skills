@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 Creates the starting point of an **LLM Wiki**: instead of retrieving raw document chunks on every question, the AI incrementally builds and maintains a persistent, interlinked set of Markdown pages between the user and their sources. The user curates sources and asks questions; the AI does the summarising, cross-referencing, filing and bookkeeping. Obsidian is the viewer; the AI is the maintainer.
 
-This skill only does the **initial setup**. Day-to-day behaviour ships inside the generated vault: the rules and the query workflow in its `CLAUDE.md`, and ingest and lint as project skills in `.claude/skills/` (`wiki-ingest`, and `wiki-lint` with a deterministic lint script). Any future session in that vault follows the same rules without this skill.
+This skill only does the **initial setup**. Day-to-day behaviour ships inside the generated vault's `.claude/`: the rules and the query workflow in its `CLAUDE.md`; six project skills (`wiki-capture`, `wiki-ingest`, `wiki-lint` with a deterministic lint script, `wiki-refactor` with a link-rewriting rename/merge script, `wiki-research`, `wiki-synthesize`); a `wiki-source-reader` subagent for long sources; a path-scoped rule for `synthesis/`; and hooks in `settings.json` that keep `raw/` immutable, brief each session, and check the bookkeeping when a turn changed the wiki. Any future session in that vault follows the same rules without this skill.
 
 ## What gets generated
 
@@ -22,7 +22,12 @@ This skill only does the **initial setup**. Day-to-day behaviour ships inside th
 │   ├── sources/ entities/ concepts/ analyses/
 ├── synthesis/           # layer 3: artifacts generated ON DEMAND from the wiki
 ├── templates/           # Obsidian templates for every page type
-├── .claude/skills/      # wiki-ingest, wiki-lint (+ scripts/lint.py); hidden in Obsidian
+├── .claude/             # hidden in Obsidian
+│   ├── skills/          # wiki-capture, -ingest, -lint, -refactor, -research, -synthesize
+│   ├── agents/          # wiki-source-reader
+│   ├── rules/           # synthesis.md (loads when synthesis/ is touched)
+│   ├── hooks/           # wiki_hooks.py: raw/ guard, session brief, Stop check
+│   └── settings.json    # wires the hooks; pre-approves rg, fd, PDF tools
 └── .obsidian/           # wikilinks, attachment folder, graph colours, templates
                          # + bundled profile: theme, plugins, settings
 ```
@@ -44,6 +49,7 @@ Also mention, in the same message, the default destination (`./<slug>` under the
 
 - Derive `slug` = lowercase ASCII kebab-case of the project name (the script does this too). `--dest` is the vault folder itself, not its parent, so for the default pass `./<slug>`.
 - If the destination exists and is non-empty, say so and ask whether to scaffold into it anyway or pick another path. Scaffolding into an existing Obsidian vault is supported: existing files are never overwritten, the vault keeps its own `.obsidian` setup (the bundled profile is skipped), and the script reports settings that clash with the wiki rules instead of changing them.
+- If the vault already has a `.claude/settings.json`, the script keeps it and says the wiki's hooks are not active. Offer to merge the `hooks` and `permissions` from the template's `dot-claude/settings.json` into it; edit only on their yes.
 - If the path sits under iCloud Drive (`Mobile Documents`), OneDrive or Dropbox, mention that sync conflicts and git can fight each other, and let them choose.
 
 ### 3. Run the scaffold script
@@ -86,7 +92,7 @@ Offer the install commands for the missing ones, and run them only if the user s
 Show a compact tree of what was created (from the script's file list) and anything it skipped or flagged. Then give the three next steps, briefly:
 
 1. In Obsidian: **Open folder as vault** -> the new folder. Accept "trust author / turn on community plugins" once, so the bundled plugins and settings load.
-2. Open the vault folder in Claude Code, so the rules and the `wiki-ingest` / `wiki-lint` skills load. Other agents that read `AGENTS.md` are pointed to the same files.
-3. Drop a first source into `raw/` (or use the Obsidian Web Clipper) and say: "Ingest `raw/<file>`". Every ~10 ingests, say "Health-check the wiki".
+2. Open the vault folder in Claude Code and accept the folder-trust prompt, so the rules, skills and hooks load. The hooks need Python on PATH (`py`, `python3` or `python`), and on Windows Git for Windows (Claude Code runs hooks through Git Bash). Other agents that read `AGENTS.md` get the rules and skill procedures, but not the hooks.
+3. Drop a first source into `raw/` (or use the Obsidian Web Clipper, or say "Save this article: <url>") and say: "Ingest `raw/<file>`". Every ~10 ingests, say "Health-check the wiki".
 
 Offer `git init` rather than doing it. If they agree, the template already ships `.gitignore` and `.gitattributes` (LF endings, so Windows and macOS don't produce noisy diffs; plugin settings are committed so a clone looks the same).
