@@ -30,6 +30,7 @@ Angles to draw questions from, per topic type. Pick the ones that are uncertain 
 
 - **What's really being optimised**: money, time, stress, growth, family, optionality. Rank them.
 - **Options**: always include "do nothing" and "wait"; look for a hybrid.
+- **Descartes square** (for a yes/no choice between doing X and not doing it): four cells, what I gain and what I lose if I do it, and what I gain and what I lose if I don't. The cell people skip is *what I lose if I don't* (lost momentum, time and money already invested, a goal left unmet), so ask it directly. Then pair items that mirror each other across cells ("I'm an expert now" vs "I'd be a beginner again", "more free time" vs "evenings spent learning") and ask which side of each pair weighs more; cross out the weaker side. What's left points to the answer.
 - **Reversibility**: how hard and costly it is to undo each option.
 - **Costs**: up front, ongoing, hidden (time, maintenance, regret).
 - **Worst case**: for each option, and whether it is survivable.

@@ -20,6 +20,17 @@ Fill this in after round 1 and keep it current after every round. The doc must s
 | Q1 | <question, short> | <decision, including any change the user added to the option> | <the reason given or the accepted recommendation> | 1 |
 | ~~Q2~~ | ~~<question>~~ | ~~<old decision>~~ | superseded by Q9 | 1 |
 
+## Descartes square
+
+<Only for a yes/no personal decision. Fill the cells as answers come in. Rank each cell by importance as the user tells you. In the last round, cross out the weaker side of each mirror pair (~~like this~~) so only the items that decide it remain.>
+
+| | If I do it | If I don't |
+|---|---|---|
+| **Gain** | <item> | <item> |
+| **Lose** | <item> | <item> |
+
+**Pairs weighed:** <item> vs <item> → <the one that matters more> (Q7)
+
 ## Assumptions and constraints
 
 - <a fact from research, or something the user stated as given>
