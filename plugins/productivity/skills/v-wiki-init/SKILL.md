@@ -1,6 +1,7 @@
 ---
 name: v-wiki-init
-description: Scaffold a new LLM-maintained wiki (Karpathy's "LLM Wiki" pattern) as an Obsidian vault - folder structure, Obsidian configs, a CLAUDE.md rulebook, page templates, a raw-sources layer, an interlinked wiki layer, and a separate synthesis layer for generated artifacts. Use this skill whenever the user wants to start, bootstrap, set up, initialise or create a wiki, second brain, knowledge base, research vault or "LLM wiki" that an AI will maintain, or mentions Karpathy's wiki gist, Obsidian + LLM, a persistent knowledge base built from sources (papers, articles, PDFs, notes), or asks "set up a wiki for <topic/project>". Trigger even if they do not say "wiki-init" or "Obsidian" explicitly - any request to create the initial structure for an AI-maintained, markdown-based knowledge base belongs here.
+description: Scaffold a new LLM-maintained wiki (Karpathy's "LLM Wiki" pattern) as an Obsidian vault with raw, wiki and synthesis layers, a CLAUDE.md rulebook, page templates and a bundled Obsidian profile. Manual only - run /v-wiki-init.
+disable-model-invocation: true
 ---
 
 # v-wiki-init

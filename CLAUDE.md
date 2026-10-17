@@ -22,7 +22,7 @@ Current plugins: `productivity` (`v-wiki-init`), `engineering` (`v-dotnet-as-jav
 - Plugins group skills by theme; add a new skill to an existing plugin when it fits, otherwise create a new plugin.
 - Adding a plugin means doing **both**: create `plugins/<name>/.claude-plugin/plugin.json` *and* add an entry to `.claude-plugin/marketplace.json` (`source: "./plugins/<name>"`). A plugin missing from the marketplace file is not installable.
 - Skills must not hardcode install locations such as `.claude/skills/...`. Reference bundled files relative to the skill, and use `${CLAUDE_SKILL_DIR}` in shell commands.
-- Keep SKILL.md `description:` rich in trigger phrases — it is what makes the skill fire.
+- Keep SKILL.md `description:` rich in trigger phrases — it is what makes the skill fire. Exception: skills with `disable-model-invocation: true` (e.g. `v-wiki-init`) fire only when the user types `/<skill>`, so their description is just a short summary for the slash-command menu.
 
 ## Commands
 
