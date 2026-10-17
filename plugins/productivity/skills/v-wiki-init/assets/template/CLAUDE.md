@@ -62,15 +62,11 @@ Links are what turn a pile of notes into a wiki, and Obsidian's backlinks, graph
 
 ## Workflows
 
+Ingest and lint have full procedures in `.claude/skills/`. Claude Code loads them as the `wiki-ingest` and `wiki-lint` skills; any other agent should read the `SKILL.md` there before starting.
+
 ### Ingest (user adds a source)
 
-1. Read the source in full (see [[TOOLS]] for PDFs). Tell the user the 3-5 key takeaways and ask what to emphasise, unless they asked for a quiet batch ingest.
-2. Create `wiki/sources/<slug>.md` from the source template; link the raw file in `raw:`.
-3. Update or create the entity and concept pages the source touches. One source typically touches 5-15 pages. Add cross-links in both directions.
-4. Flag contradictions with existing pages (callout above) and mark outdated pages `status: stale`.
-5. Add every new page to [[index]]; refresh summaries of changed ones.
-6. Revise [[overview]] if the big picture shifted.
-7. Append to [[log]].
+Read the source in full, agree on emphasis, write its `wiki/sources/` page, update the 5-15 entity and concept pages it touches with cited claims and two-way links, flag contradictions, then update [[index]], [[overview]] and [[log]]. Procedure: `.claude/skills/wiki-ingest/SKILL.md`.
 
 ### Query (user asks a question)
 
@@ -80,7 +76,7 @@ Links are what turn a pile of notes into a wiki, and Obsidian's backlinks, graph
 
 ### Lint (health check, on request or every ~10 ingests)
 
-Report first, fix on the user's go-ahead. Look for: contradictions; stale claims superseded by newer sources; orphan pages; mentioned-but-missing pages (unresolved links); pages missing frontmatter, `updated` or sources; `(unsourced)` claims; duplicate or near-duplicate pages; index entries that are missing or dead; synthesis artifacts older than the pages they are based on; and gaps a web search or new source could fill. Suggest 3-5 next questions or sources. Log the pass.
+A script checks links, orphans, index, frontmatter, `(unsourced)` claims and stale synthesis; you review contradictions, near-duplicates, stale claims and gaps. Report first, fix only on the user's go-ahead, and log the pass. Procedure: `.claude/skills/wiki-lint/SKILL.md`.
 
 ## Synthesis layer (`synthesis/`)
 

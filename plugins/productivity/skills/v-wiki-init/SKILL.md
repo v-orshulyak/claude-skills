@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 Creates the starting point of an **LLM Wiki**: instead of retrieving raw document chunks on every question, the AI incrementally builds and maintains a persistent, interlinked set of Markdown pages between the user and their sources. The user curates sources and asks questions; the AI does the summarising, cross-referencing, filing and bookkeeping. Obsidian is the viewer; the AI is the maintainer.
 
-This skill only does the **initial setup**. Day-to-day ingest / query / lint behaviour lives in the generated vault's `CLAUDE.md`, so any future session in that vault follows the same rules without this skill.
+This skill only does the **initial setup**. Day-to-day behaviour ships inside the generated vault: the rules and the query workflow in its `CLAUDE.md`, and ingest and lint as project skills in `.claude/skills/` (`wiki-ingest`, and `wiki-lint` with a deterministic lint script). Any future session in that vault follows the same rules without this skill.
 
 ## What gets generated
 
@@ -22,6 +22,7 @@ This skill only does the **initial setup**. Day-to-day ingest / query / lint beh
 │   ├── sources/ entities/ concepts/ analyses/
 ├── synthesis/           # layer 3: artifacts generated ON DEMAND from the wiki
 ├── templates/           # Obsidian templates for every page type
+├── .claude/skills/      # wiki-ingest, wiki-lint (+ scripts/lint.py); hidden in Obsidian
 └── .obsidian/           # wikilinks, attachment folder, graph colours, templates
                          # + bundled profile: theme, plugins, settings
 ```
@@ -85,7 +86,7 @@ Offer the install commands for the missing ones, and run them only if the user s
 Show a compact tree of what was created (from the script's file list) and anything it skipped or flagged. Then give the three next steps, briefly:
 
 1. In Obsidian: **Open folder as vault** -> the new folder. Accept "trust author / turn on community plugins" once, so the bundled plugins and settings load.
-2. Drop a first source into `raw/` (or use the Obsidian Web Clipper) and say: "Ingest `raw/<file>`".
-3. Open the vault folder in Claude Code (or any agent that reads `CLAUDE.md`/`AGENTS.md`) so the rules apply.
+2. Open the vault folder in Claude Code, so the rules and the `wiki-ingest` / `wiki-lint` skills load. Other agents that read `AGENTS.md` are pointed to the same files.
+3. Drop a first source into `raw/` (or use the Obsidian Web Clipper) and say: "Ingest `raw/<file>`". Every ~10 ingests, say "Health-check the wiki".
 
 Offer `git init` rather than doing it. If they agree, the template already ships `.gitignore` and `.gitattributes` (LF endings, so Windows and macOS don't produce noisy diffs; plugin settings are committed so a clone looks the same).

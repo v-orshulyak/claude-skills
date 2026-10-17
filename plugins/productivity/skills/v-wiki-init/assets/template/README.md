@@ -30,6 +30,8 @@ Open this folder in Claude Code (or another agent that reads `CLAUDE.md` / `AGEN
 - **Lint:** "Health-check the wiki."
 - **Synthesize:** "Write a one-page brief for the leadership team from the wiki." (lands in `synthesis/`)
 
+Ingest and lint are Claude Code skills shipped in `.claude/skills/` (Obsidian hides that folder). The lint checks can also be run by hand: `python3 .claude/skills/wiki-lint/scripts/lint.py`.
+
 ## Handy Obsidian add-ons (optional)
 
 - **Web Clipper** browser extension: clip articles to Markdown straight into `raw/`.

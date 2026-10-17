@@ -15,6 +15,7 @@ reported rather than changed, and the self-check only fails on the wiki's own fi
 """
 import argparse
 import datetime
+import importlib.util
 import json
 import re
 import shutil
@@ -26,9 +27,19 @@ SKILL_DIR = Path(__file__).resolve().parent.parent
 TEMPLATE = SKILL_DIR / "assets" / "template"
 PROFILE = SKILL_DIR / "assets" / "obsidian-profile"  # bundled Obsidian settings, plugins and theme
 TOKEN_RE = re.compile(r"__[A-Z][A-Z_]*__")
-WIKILINK_RE = re.compile(r"\[\[([^\]\|#]+)(?:#[^\]\|]*)?(?:\|[^\]]*)?\]\]")
-FENCE_RE = re.compile(r"```.*?```|~~~.*?~~~", re.S)
-INLINE_CODE_RE = re.compile(r"`[^`\n]*`")
+# The vault's own lint script (shipped in the template) is the single source of truth for
+# wikilink parsing; the self-check below reuses it so the two can never disagree.
+LINT_PY = TEMPLATE / "dot-claude" / "skills" / "wiki-lint" / "scripts" / "lint.py"
+
+
+def _load_lint():
+    spec = importlib.util.spec_from_file_location("wiki_lint", LINT_PY)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+lint = _load_lint()
 WINDOWS_RESERVED = {"con", "prn", "aux", "nul", *(f"com{i}" for i in range(1, 10)), *(f"lpt{i}" for i in range(1, 10))}
 
 
@@ -238,10 +249,6 @@ def import_obsidian(source: Path, dest: Path, created: set) -> list:
     return report
 
 
-def strip_code(text: str) -> str:
-    return INLINE_CODE_RE.sub("", FENCE_RE.sub("", text))
-
-
 def template_paths() -> set:
     """Vault-relative paths of every file the template ships (dot- names resolved)."""
     return {Path(*[real_name(p) for p in f.relative_to(TEMPLATE).parts]).as_posix()
@@ -272,34 +279,34 @@ def check(dest: Path, foreign=None) -> tuple[list, list]:
     def report(msg, *rels):
         (problems if any(owned(r) for r in rels) else warnings).append(msg)
 
-    def vault_file(p: Path) -> bool:
-        return p.is_file() and ".obsidian" not in p.parts and ".git" not in p.parts
-
-    md_files = [p for p in dest.rglob("*.md") if vault_file(p)]
+    # Notes are files outside hidden folders, as in Obsidian. The vault's skills live in the
+    # hidden .claude/ folder, so their SKILL.md files are checked for tokens and stray
+    # wikilinks but don't count as notes (two SKILL.md would otherwise clash as duplicates).
+    files = lint.walk_files(dest)
+    md_files = [rel for rel in files if rel.endswith(".md")]
     stems = {}
-    for p in md_files:
-        stems.setdefault(p.stem.lower(), []).append(p.relative_to(dest).as_posix())
+    for rel in md_files:
+        stems.setdefault(Path(rel).stem.lower(), []).append(rel)
     for stem, paths in stems.items():
         if len(paths) > 1:
             report(f"duplicate note name '{stem}': {', '.join(paths)}", *paths)
 
-    all_names = {p.name.lower() for p in dest.rglob("*") if vault_file(p)} | set(stems)
-    for p in [*dest.glob(".obsidian/*.json"), *(q for q in dest.rglob("*.json") if vault_file(q))]:
-        rel = p.relative_to(dest).as_posix()
+    all_names = {Path(rel).name.lower() for rel in files} | set(stems)
+    for rel in [*(p.relative_to(dest).as_posix() for p in dest.glob(".obsidian/*.json")),
+                *(rel for rel in files if rel.endswith(".json"))]:
         try:
-            json.loads(p.read_text(encoding="utf-8"))
+            json.loads((dest / rel).read_text(encoding="utf-8"))
         except ValueError as exc:
             report(f"invalid JSON {rel}: {exc}", rel)
-    for p in md_files:
-        rel = p.relative_to(dest).as_posix()
-        text = p.read_text(encoding="utf-8", errors="replace")
+    skill_docs = [p.relative_to(dest).as_posix() for p in sorted(dest.glob(".claude/skills/*/SKILL.md"))]
+    for rel in [*md_files, *skill_docs]:
+        text = (dest / rel).read_text(encoding="utf-8", errors="replace")
         for token in sorted(set(TOKEN_RE.findall(text))):
             report(f"unfilled token {token} in {rel}", rel)
         if rel.startswith("templates/"):
             continue
-        for target in sorted(set(WIKILINK_RE.findall(strip_code(text)))):
-            name = target.strip().split("/")[-1].lower()
-            if name not in all_names:
+        for target in sorted({target for _, target in lint.wikilinks(text)}):
+            if lint.link_key(target) not in all_names:
                 report(f"unresolved wikilink [[{target}]] in {rel}", rel)
     return problems, warnings
 

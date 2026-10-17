@@ -6,6 +6,9 @@
 .obsidian/cache
 .trash/
 
+# Claude Code per-user settings (the skills in .claude/skills are committed)
+.claude/settings.local.json
+
 # OS noise
 .DS_Store
 Thumbs.db
