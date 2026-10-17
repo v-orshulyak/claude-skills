@@ -8,7 +8,6 @@
 
 # Claude Code per-user files (skills, hooks, rules, agents and settings.json are committed)
 .claude/settings.local.json
-.claude/.wiki-state.json
 
 # OS noise
 .DS_Store

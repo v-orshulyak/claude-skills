@@ -1,10 +1,21 @@
 # Tools for __PROJECT_NAME__
 
-Everything here works from **macOS** (zsh/bash, Homebrew) and **Windows** (PowerShell, Scoop or winget). Linux works like macOS with the distro's package manager. All tools are optional: the wiki is plain Markdown and the AI can fall back to its built-in file tools. They make search and PDF handling faster and cheaper as the wiki grows. Rules and workflows are in [[CLAUDE.md]].
+Everything here works from **macOS** (zsh/bash, Homebrew) and **Windows** (PowerShell, Scoop or winget). Linux works like macOS with the distro's package manager. Rules and workflows are in [[CLAUDE.md]].
+
+## Required
+
+| Need | mac | win | Why |
+|---|---|---|---|
+| **Python 3.9+** | `brew install python` (or `xcode-select --install`) | `winget install --id Python.Python.3.13` (or `scoop install python`) | Runs the Claude Code hooks (`raw/` guard, session brief, end-of-turn check) and the lint, refactor and source-size scripts. Check: `python3 --version` / `py --version`. |
+| **Git Bash** (Windows only) | - | `winget install --id Git.Git` | Claude Code runs hook commands through Git Bash; without it it falls back to PowerShell, and every hook reports an error on that machine. Using git for the vault stays optional. |
+
+Without Python the wiki still works as plain Markdown, but nothing checks it: the session brief says so when that happens. After installing, restart Claude Code so it sees the new PATH.
+
+## Optional tools
+
+All of these are optional: the AI can fall back to its built-in file tools. They make search and PDF handling faster and cheaper as the wiki grows.
 
 > Check the platform before running anything. Commands marked **mac** run in zsh/bash; **win** commands run in PowerShell. Use forward slashes in paths inside notes on both systems.
-
-## Install
 
 macOS needs [Homebrew](https://brew.sh); Windows needs [Scoop](https://scoop.sh) (or winget). Package names below are Scoop names; check with `scoop search <name>` / `winget search <name>` if one has moved.
 
@@ -20,7 +31,7 @@ macOS needs [Homebrew](https://brew.sh); Windows needs [Scoop](https://scoop.sh)
 | PDF to Markdown (layout-aware) | **docling** | `pipx install docling` | same | Heavier ML pipeline; best on tables and multi-column papers. |
 | Scanned PDFs | **ocrmypdf** | `brew install ocrmypdf` | `pip install ocrmypdf` plus Tesseract and Ghostscript, or use WSL | Adds a text layer to scans so the other tools can read them. |
 | Document conversion | **pandoc** | `brew install pandoc` | `scoop install pandoc` | DOCX, EPUB, HTML to and from Markdown. |
-| Version history | **git** | `brew install git` | `scoop install git` | The vault is just files; `.gitignore` and `.gitattributes` are ready. |
+| Version history | **git** | `brew install git` | `scoop install git` | Optional. Skip it if the vault lives in OneDrive, iCloud or Dropbox: the sync service keeps file history, and the two fight over files. Otherwise `.gitignore` and `.gitattributes` are ready. |
 | Obsidian itself | Obsidian | `brew install --cask obsidian` | `winget install Obsidian.Obsidian` | Has an official CLI (1.12+; enable in Settings, General) that drives the running app. |
 
 `pipx` needs Python: `brew install pipx` / `scoop install pipx`.
@@ -60,4 +71,4 @@ Never write derived files into `raw/`; it is immutable. Keep any conversions in 
 - Filenames: lowercase kebab-case, no `\ / : * ? " < > |`, no reserved Windows names, no names differing only by case (macOS and Windows file systems are case-insensitive by default).
 - No symlinks, no absolute paths in notes, short paths (Windows path-length limits).
 - LF line endings everywhere (`.gitattributes` enforces it); configure your editor not to convert.
-- If the vault lives in a cloud-synced folder (iCloud, OneDrive, Dropbox), expect sync conflicts when git is used as well; pick one.
+- Cloud-synced folders (OneDrive, iCloud, Dropbox) are fine; use the sync service's version history rather than adding git on top. Let a sync finish before opening the vault on another machine, or the two copies of a page can turn into a conflict file.

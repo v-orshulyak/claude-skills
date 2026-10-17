@@ -6,7 +6,7 @@
   wiki_hooks.py guard          # PreToolUse: keep raw/ immutable, pre-approve the wiki scripts
   wiki_hooks.py stop           # Stop: wiki changed this turn -> log, updated: and lint are current
 
-Reads the hook event as JSON on stdin and answers in the JSON Claude Code expects. The hooks
+Started through run.sh, which finds a Python 3.9+. Reads the hook event as JSON on stdin and answers in the JSON Claude Code expects. The hooks
 back up the rules in CLAUDE.md; agents without hooks still follow the rules from there.
 Any crash exits 1 (a non-blocking hook error), so a bug here never locks the user out.
 Standard library only, Python 3.9+, macOS, Windows (Git Bash) and Linux.
@@ -21,12 +21,12 @@ import os
 import re
 import shlex
 import sys
+import tempfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 VAULT = Path(os.environ.get("CLAUDE_PROJECT_DIR") or HERE.parent.parent).resolve()
 RAW = VAULT / "raw"
-STATE = HERE.parent / ".wiki-state.json"  # per-machine, gitignored
 LINT_PY = HERE.parent / "skills" / "wiki-lint" / "scripts" / "lint.py"
 TRACKED = ("wiki", "synthesis")
 LOG = "wiki/log.md"
@@ -69,7 +69,7 @@ def session_start(event: dict) -> int:
             f"{Path(rel).stem} ({done} done, {skipped} skipped, {total - done - skipped} left)" for rel, done, skipped, total in partial))
     if since >= 10:
         lines.append(f"{since} ingests since the last lint: suggest a health check (wiki-lint).")
-    snapshot()
+    snapshot(event)
     emit({"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": "\n".join(lines)}})
     return 0
 
@@ -113,15 +113,23 @@ def log_entries() -> int:
     return len(re.findall(r"^## \[\d{4}-\d{2}-\d{2}\] \w+ \|", text, re.M))
 
 
-def snapshot() -> None:
+def state_file(event: dict) -> Path:
+    """Per machine and session, in the temp folder: never inside the vault, which OneDrive,
+    iCloud or Dropbox would sync (and turn into conflict copies)."""
+    vault = hashlib.sha1(str(VAULT).encode("utf-8")).hexdigest()[:12]
+    session = re.sub(r"[^A-Za-z0-9-]", "", str(event.get("session_id") or "default"))[:64]
+    return Path(tempfile.gettempdir()) / f"claude-wiki-{vault}-{session}.json"
+
+
+def snapshot(event: dict) -> None:
     try:
-        STATE.write_text(json.dumps({"files": scan(), "log_entries": log_entries()}), encoding="utf-8")
+        state_file(event).write_text(json.dumps({"files": scan(), "log_entries": log_entries()}), encoding="utf-8")
     except OSError:
         pass
 
 
 def prompt(event: dict) -> int:
-    snapshot()
+    snapshot(event)
     return 0
 
 
@@ -129,7 +137,7 @@ def stop(event: dict) -> int:
     if event.get("stop_hook_active"):
         return 0  # already sent back once this turn; don't loop
     try:
-        state = json.loads(STATE.read_text(encoding="utf-8"))
+        state = json.loads(state_file(event).read_text(encoding="utf-8"))
         before, entries_before = state["files"], state.get("log_entries", 0)
     except (OSError, ValueError, KeyError):
         return 0

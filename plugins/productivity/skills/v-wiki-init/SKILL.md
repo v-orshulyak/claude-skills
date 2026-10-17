@@ -50,15 +50,31 @@ Also mention, in the same message, the default destination (`./<slug>` under the
 - Derive `slug` = lowercase ASCII kebab-case of the project name (the script does this too). `--dest` is the vault folder itself, not its parent, so for the default pass `./<slug>`.
 - If the destination exists and is non-empty, say so and ask whether to scaffold into it anyway or pick another path. Scaffolding into an existing Obsidian vault is supported: existing files are never overwritten, the vault keeps its own `.obsidian` setup (the bundled profile is skipped), and the script reports settings that clash with the wiki rules instead of changing them.
 - If the vault already has a `.claude/settings.json`, the script keeps it and says the wiki's hooks are not active. Offer to merge the `hooks` and `permissions` from the template's `dot-claude/settings.json` into it; edit only on their yes.
-- If the path sits under iCloud Drive (`Mobile Documents`), OneDrive or Dropbox, mention that sync conflicts and git can fight each other, and let them choose.
+- A vault under OneDrive, iCloud Drive (`Mobile Documents`) or Dropbox is fine and common: the sync service then provides version history, so git is not needed. Mention only that the same vault should not also be put under git, since the two fight over files.
 
-### 3. Run the scaffold script
+### 3. Check Python, then run the scaffold script
+
+Python 3.9+ is a prerequisite, not an optional tool: the scaffold, and later the vault's hooks (`raw/` guard, session brief, end-of-turn check) and its lint, refactor and source-size scripts all run on it. Check it first:
+
+- macOS/Linux: `python3 --version`. On a Mac without the Command Line Tools this may open an install dialog for them, which is one valid way to get Python.
+- Windows (PowerShell): `py --version`, then `python --version`. A `python` or `python3` that only prints "Python was not found" or opens the Microsoft Store is the Store stub, not Python.
+
+If none reports 3.9 or newer, say so and offer to install it, running the command only on their yes:
+
+- macOS: `brew install python` (or `xcode-select --install` for the Command Line Tools' `python3`).
+- Windows: `winget install --id Python.Python.3.13` (or `scoop install python`). The `py` launcher comes with it.
+
+After an install a new terminal is needed; if `python3`/`py` is still not found, ask the user to restart Claude Code. If they decline, create the vault by hand from `assets/template/` (mapping `dot-X` to `.X`, filling the tokens yourself), say you did, and warn that the hooks will stay inactive and lint, refactor and size estimation won't run until Python is installed.
+
+On Windows, also check for Git Bash: `Get-Command git`, or whether `C:\Program Files\Git\bin\bash.exe` exists (a `bash` in `C:\Windows\System32` is WSL and doesn't count). Claude Code runs hook commands through Git Bash and falls back to PowerShell, which cannot run them. Git for Windows provides it (`winget install --id Git.Git`); installing it does not mean the vault has to use git. Offer it the same way; without it every hook reports an error on that machine (it is the one case the launcher cannot soften).
+
+Then run the scaffold:
 
 ```bash
 python3 "${CLAUDE_SKILL_DIR}/scripts/scaffold.py" --name "<Project name>" --description "<description>" --dest "<path>"
 ```
 
-The script needs Python 3.9+; on Windows use `py` or `python` instead of `python3`. It copies `assets/template/`, fills the `__PROJECT_NAME__`, `__DESCRIPTION__`, `__SLUG__`, `__DATE__` tokens, never overwrites existing files, applies the Obsidian profile, and finishes with a self-check (valid JSON, no leftover tokens, every wikilink resolves, no duplicate note names). If Python is unavailable, create the same files by hand from `assets/template/` (mapping `dot-X` to `.X`) and say you did.
+On Windows use `py` or `python` instead of `python3`. It copies `assets/template/`, fills the `__PROJECT_NAME__`, `__DESCRIPTION__`, `__SLUG__`, `__DATE__` tokens, never overwrites existing files, applies the Obsidian profile, and finishes with a self-check (valid JSON, no leftover tokens, every wikilink resolves, no duplicate note names).
 
 **Obsidian profile.** `assets/obsidian-profile/` bundles the user's Obsidian setup (theme, 16 community plugins with their settings, core-plugin choices, property types), so a new vault looks like their others on any machine. It is applied by default to a vault without a `.obsidian` folder; the script then re-asserts the settings the wiki rules depend on (wikilinks, shortest-path links, `raw/assets` attachments, the `templates/` folder). Pass `--no-profile` for stock settings, or `--obsidian-from "<vault>"` to use another vault's `.obsidian` instead. Plugin settings that look like they hold a credential are left out; tell the user which.
 
@@ -80,7 +96,7 @@ Leave the layer rules, link rules and workflows untouched; they are what keeps t
 
 ### 5. Propose CLI tooling (macOS and Windows)
 
-The generated `TOOLS.md` holds the full table with install commands for both platforms. Detect the OS and which tools are already present, including the package manager the install commands need (`brew`, `pipx`, `node` on macOS; `scoop`, `pipx`, `node` on Windows). Use `command -v rg fd jq yq qmd pdftotext mutool markitdown docling ocrmypdf pandoc` on macOS/Linux, or `Get-Command` with the same names on Windows. Give the user a short summary - installed vs. missing - not the whole table:
+Python (and Git Bash on Windows) was settled in step 3. The generated `TOOLS.md` holds the full table of optional tools with install commands for both platforms. Detect the OS and which tools are already present, including the package manager the install commands need (`brew`, `pipx`, `node` on macOS; `scoop`, `pipx`, `node` on Windows). Use `command -v rg fd jq yq qmd pdftotext mutool markitdown docling ocrmypdf pandoc` on macOS/Linux, or `Get-Command` with the same names on Windows. Give the user a short summary - installed vs. missing - not the whole table:
 
 - **Search:** `ripgrep` (always worth it), `fd`, `jq`/`yq` for frontmatter; `qmd` once the wiki outgrows `index.md` (~100+ pages) for hybrid keyword/semantic search with an MCP server.
 - **PDFs:** Claude can read PDFs directly; add `poppler` (`pdftotext`, `pdfinfo`, `pdftoppm` to render pages as images when figures matter), and `markitdown` or `docling` for PDF/Office -> Markdown on large or table-heavy files; `ocrmypdf` for scans.
@@ -92,7 +108,7 @@ Offer the install commands for the missing ones, and run them only if the user s
 Show a compact tree of what was created (from the script's file list) and anything it skipped or flagged. Then give the three next steps, briefly:
 
 1. In Obsidian: **Open folder as vault** -> the new folder. Accept "trust author / turn on community plugins" once, so the bundled plugins and settings load.
-2. Open the vault folder in Claude Code and accept the folder-trust prompt, so the rules, skills and hooks load. The hooks need Python on PATH (`py`, `python3` or `python`), and on Windows Git for Windows (Claude Code runs hooks through Git Bash). Other agents that read `AGENTS.md` get the rules and skill procedures, but not the hooks.
+2. Open the vault folder in Claude Code and accept the folder-trust prompt, so the rules, skills and hooks load. If Python is missing on a machine that opens the vault later, the session brief says so instead of the hooks failing on every action. Other agents that read `AGENTS.md` get the rules and skill procedures, but not the hooks.
 3. Drop a first source into `raw/` (or use the Obsidian Web Clipper, or say "Save this article: <url>") and say: "Ingest `raw/<file>`". Every ~10 ingests, say "Health-check the wiki".
 
-Offer `git init` rather than doing it. If they agree, the template already ships `.gitignore` and `.gitattributes` (LF endings, so Windows and macOS don't produce noisy diffs; plugin settings are committed so a clone looks the same).
+Git is optional. Don't suggest it for a vault in OneDrive, iCloud or Dropbox (the sync service keeps file history). Elsewhere, offer `git init` rather than doing it; the template already ships `.gitignore` and `.gitattributes` (LF endings, so Windows and macOS don't produce noisy diffs; plugin settings are committed so a clone looks the same).
