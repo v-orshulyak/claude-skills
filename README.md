@@ -11,6 +11,6 @@ claude plugin install finances@v-skills
 
 | Plugin | Skills |
 |---|---|
-| `productivity` | `v-wiki-init` |
+| `productivity` | `v-wiki-init`, `v-retro` |
 | `engineering` | `v-dotnet-as-java` |
 | `finances` | _none yet_ |

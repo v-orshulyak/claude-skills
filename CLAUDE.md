@@ -14,7 +14,7 @@ plugins/<plugin>/.claude-plugin/plugin.json
 plugins/<plugin>/skills/<v-skill>/SKILL.md   (+ optional references/, scripts)
 ```
 
-Current plugins: `productivity` (`v-wiki-init`), `engineering` (`v-dotnet-as-java`), `finances` (empty). Empty plugins keep a `skills/.gitkeep` placeholder.
+Current plugins: `productivity` (`v-wiki-init`, `v-retro`), `engineering` (`v-dotnet-as-java`), `finances` (empty). Empty plugins keep a `skills/.gitkeep` placeholder.
 
 ## Conventions
 
@@ -56,3 +56,4 @@ After editing a skill, `claude plugin marketplace update v-skills` (or reinstall
 
 - `v-dotnet-as-java` was copied from the unprefixed `~/.claude/skills/dotnet-for-java-devs`; that personal copy is separate from this repo.
 - `v-wiki-init` scaffolds an LLM wiki (Karpathy pattern) as an Obsidian vault. Its output is the tree under `skills/v-wiki-init/assets/template/` filled in by `scripts/scaffold.py` (stdlib Python, must run on macOS and Windows). Test it with `python3 scripts/scaffold.py --name X --dest <scratch dir>`; it self-checks wikilinks, JSON and tokens. The Obsidian setup (theme, 16 plugins, settings) is bundled in `assets/obsidian-profile/` (about 18 MB); refresh it with `--snapshot-profile <vault>`. `--obsidian-from <vault>` and `--no-profile` override it. Hidden template files are stored as `dot-*`.
+- `v-retro` (manual-only) reviews a session for friction and suggests where fixes should live (CLAUDE.md, memory, permissions, hooks, scripts, skills). `scripts/session_digest.py` (stdlib Python) condenses a transcript from `~/.claude/projects/<project>/<session>.jsonl`; it finds the current session through `CLAUDE_CODE_SESSION_ID`, else the newest transcript for the working directory or its nearest parent, and refuses an ambiguous id prefix. Test it with `python3 scripts/session_digest.py --list`, `python3 scripts/session_digest.py <session-id> --with-text` and `python3 scripts/session_digest.py --recent 10` (friction recurring across sessions).
