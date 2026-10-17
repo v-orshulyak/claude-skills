@@ -46,7 +46,7 @@ Links are what turn a pile of notes into a wiki, and Obsidian's backlinks, graph
 
 ## Page types (use the matching file in `templates/`)
 
-- **source** (`wiki/sources/`): one per raw file. Summary, key claims with locators, entities/concepts mentioned, open questions. Frontmatter `raw:` links the original, e.g. `raw: "[[paper.pdf]]"`.
+- **source** (`wiki/sources/`): one per raw file (a large source gets a book page with a reading map plus one page per ingested chunk). Summary, key claims with locators, entities/concepts mentioned, open questions. Frontmatter `raw:` links the original, e.g. `raw: "[[paper.pdf]]"`.
 - **entity** (`wiki/entities/`): a thing in the world. What it is, role in this domain, timeline, relations, where each fact came from.
 - **concept** (`wiki/concepts/`): an idea or topic. Definition, how it's used, competing views, related concepts.
 - **analysis** (`wiki/analyses/`): a valuable answer, comparison or investigation saved back so explorations compound instead of vanishing into chat history.
@@ -68,7 +68,7 @@ Full procedures live in `.claude/skills/<name>/SKILL.md`. Claude Code loads them
 | Skill | When |
 |---|---|
 | `wiki-capture` | Save a URL, pasted text or outside file into `raw/` |
-| `wiki-ingest` | File a source from `raw/` into the wiki (long sources are read by the `wiki-source-reader` subagent) |
+| `wiki-ingest` | File a source from `raw/` into the wiki. Size is estimated first: long sources go to the `wiki-source-reader` subagent; large ones (books) are surveyed and ingested in chunks, with progress kept in a reading map on the book page |
 | `wiki-lint` | Health check, on request or every ~10 ingests: script + judgement, report first, fix on the go-ahead |
 | `wiki-refactor` | Rename, merge or split pages without breaking links |
 | `wiki-research` | Find sources for gaps and open questions, then capture them |

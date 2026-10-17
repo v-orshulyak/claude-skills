@@ -31,6 +31,7 @@ INLINE_CODE_RE = re.compile(r"`[^`\n]*`")
 FENCE_OPEN_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
 FRONTMATTER_RE = re.compile(r"\A---\r?\n(.*?)\r?\n---[ \t]*(?:\r?\n|\Z)", re.S)
 LOG_ENTRY_RE = re.compile(r"^## \[(\d{4}-\d{2}-\d{2})\] (\w+) \|", re.M)
+MAP_ITEM_RE = re.compile(r"^\s*[-*]\s+\[([ xX-])\]")
 CONTRADICTION_RE = re.compile(r"^>\s*\[!warning\][+-]?\s*contradiction", re.I)
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 KEBAB_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -329,6 +330,8 @@ def lint(v: Vault) -> tuple:
     review["possible duplicates (check content)"] = near_duplicates(v, content)
     review["unresolved links recorded under Gaps"] = sorted(f"[[{t}]]" for t in recorded)
     review["raw files not ingested yet"] = new_sources(v)
+    review["large sources ingested in part"] = [f"{rel} ({done}/{total} chunks done, {skipped} skipped)"
+                                                for rel, done, skipped, total in partial_sources(v)]
     review["ingests since the last lint"] = [str(ingests_since_lint(v))]
     return findings, review
 
@@ -355,9 +358,12 @@ def names_of(v: Vault, rel: str) -> list:
 
 def near_duplicates(v: Vault, pages: list, limit: int = 20) -> list:
     keyed = [(rel, {normalise(n) for n in names_of(v, rel) if normalise(n)}) for rel in pages]
+    raws = {rel: raw_target(v, rel) for rel in pages if rel.startswith("wiki/sources/")}
     out = []
     for i, (a, names_a) in enumerate(keyed):
         for b, names_b in keyed[i + 1:]:
+            if raws.get(a) and raws.get(a) == raws.get(b):
+                continue  # chunk pages of one large source (book-ch03, book-ch04) are siblings, not duplicates
             if names_a & names_b or any(
                     min(len(x), len(y)) >= 5 and difflib.SequenceMatcher(None, x, y).ratio() >= 0.88
                     for x in names_a for y in names_b):
@@ -365,6 +371,31 @@ def near_duplicates(v: Vault, pages: list, limit: int = 20) -> list:
                 if len(out) >= limit:
                     return out
     return out
+
+
+def partial_sources(v: Vault) -> list:
+    """[(rel, done, skipped, total)] for source pages marked `ingest-status: partial`, counted from
+    the `- [x]` / `- [-]` / `- [ ]` lines under their `## Reading map` heading."""
+    out = []
+    for rel, note in v.notes.items():
+        if not rel.startswith("wiki/sources/") or (note["fm"] or {}).get("ingest-status") != "partial":
+            continue
+        marks, in_map = [], False
+        for _, line in code_free_lines(note["text"]):
+            if line.startswith("## "):
+                in_map = line[3:].strip().lower().startswith("reading map")
+            elif in_map:
+                m = MAP_ITEM_RE.match(line)
+                if m:
+                    marks.append(m.group(1).lower())
+        out.append((rel, marks.count("x"), marks.count("-"), len(marks)))
+    return out
+
+
+def raw_target(v: Vault, rel: str):
+    items = as_list((v.notes[rel]["fm"] or {}).get("raw"))
+    m = WIKILINK_RE.search(items[0]) if items else None
+    return v.resolve(m.group(1) if m else items[0]) if items else None
 
 
 def ingests_since_lint(v: Vault) -> int:

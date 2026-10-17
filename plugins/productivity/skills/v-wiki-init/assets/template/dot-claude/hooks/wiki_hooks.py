@@ -63,6 +63,10 @@ def session_start(event: dict) -> int:
     if pending:
         shown = ", ".join(pending[:5]) + (f" and {len(pending) - 5} more" if len(pending) > 5 else "")
         lines.append(f"Raw files not ingested yet ({len(pending)}): {shown}. Mention them if relevant.")
+    partial = lint.partial_sources(v)
+    if partial:
+        lines.append("Large sources ingested in part (resume with wiki-ingest): " + ", ".join(
+            f"{Path(rel).stem} ({done} done, {skipped} skipped, {total - done - skipped} left)" for rel, done, skipped, total in partial))
     if since >= 10:
         lines.append(f"{since} ingests since the last lint: suggest a health check (wiki-lint).")
     snapshot()

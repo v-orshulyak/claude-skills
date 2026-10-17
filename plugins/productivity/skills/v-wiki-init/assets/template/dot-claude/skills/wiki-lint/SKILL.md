@@ -17,7 +17,7 @@ python3 "${CLAUDE_SKILL_DIR}/scripts/lint.py"
 
 On Windows use `py` or `python`. It needs Python 3.9+ and only reads files. Exit code 1 means it found something, not that it crashed. Add `--json` if you want to process the findings programmatically.
 
-It reports, under **Findings**: unresolved wikilinks (except those deliberately recorded under "Gaps" in `overview`), orphan pages, dead-end pages, frontmatter problems (missing frontmatter, `type`, `title`, `updated`/`generated`, empty `sources:` / `raw:` / `based-on:`, bad dates, unfilled `{{...}}` template placeholders, a type that doesn't match its folder), `(unsourced)` claims, pages missing from `index` or `synthesis-index` and dead entries in them, stale synthesis artifacts, wiki pages linking to synthesis artifacts, duplicate note names, and non-kebab-case filenames. Under **For review** it lists starting points for your half: open contradiction callouts, pages marked `status: stale`, possible duplicates by name, links recorded under Gaps, files in `raw/` not ingested yet, and the number of ingests since the last lint.
+It reports, under **Findings**: unresolved wikilinks (except those deliberately recorded under "Gaps" in `overview`), orphan pages, dead-end pages, frontmatter problems (missing frontmatter, `type`, `title`, `updated`/`generated`, empty `sources:` / `raw:` / `based-on:`, bad dates, unfilled `{{...}}` template placeholders, a type that doesn't match its folder), `(unsourced)` claims, pages missing from `index` or `synthesis-index` and dead entries in them, stale synthesis artifacts, wiki pages linking to synthesis artifacts, duplicate note names, and non-kebab-case filenames. Under **For review** it lists starting points for your half: open contradiction callouts, pages marked `status: stale`, possible duplicates by name, links recorded under Gaps, files in `raw/` not ingested yet, large sources ingested only in part (with their reading-map progress), and the number of ingests since the last lint.
 
 ## 2. Do the judgement part
 
@@ -27,7 +27,7 @@ Bound the reading: by default look at pages touched since the last `lint` entry 
 - **Stale claims.** Pages whose claims a newer source supersedes, and pages already marked `status: stale` that still need rewriting.
 - **Near-duplicates.** Open each "possible duplicates" pair and decide: same thing (merge), related (cross-link), or unrelated (ignore). Also watch for the same idea split across pages under different names.
 - **Gaps.** Thin `draft` pages, "Open questions" sections, links recorded under Gaps, and topics many pages mention but no source covers well. Note what a web search or a new source could fill.
-- **Next steps.** Suggest 3-5 questions worth asking or sources worth finding.
+- **Next steps.** Suggest 3-5 questions worth asking or sources worth finding, and the next chunks of any large source still in progress.
 
 ## 3. Report first
 
