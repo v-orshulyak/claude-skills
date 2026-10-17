@@ -7,7 +7,11 @@ Usage:
   scaffold.py --snapshot-profile VAULT   # maintainer: refresh the bundled profile
   scaffold.py --check ./project        # only run the self-check on a vault
 
-Standard library only, works on macOS, Windows and Linux. Never overwrites files.
+Standard library only (Python 3.9+), works on macOS, Windows and Linux. Never overwrites files.
+
+Existing vaults: if DEST already has a .obsidian folder, the bundled profile is not applied
+(pass --obsidian-from explicitly to force one), settings that conflict with the wiki rules are
+reported rather than changed, and the self-check only fails on the wiki's own files.
 """
 import argparse
 import datetime
@@ -67,6 +71,8 @@ REQUIRED_APP_KEYS = ("useMarkdownLinks", "newLinkFormat", "alwaysUpdateLinks",
                      "attachmentFolderPath", "newFileLocation", "newFileFolderPath")
 REQUIRED_CORE_PLUGINS = ("file-explorer", "global-search", "graph", "backlink", "outgoing-link",
                          "properties", "templates", "bookmarks")
+# Subset that breaks the link and attachment rules if an existing vault sets them differently.
+CRITICAL_APP_KEYS = ("useMarkdownLinks", "newLinkFormat", "alwaysUpdateLinks", "attachmentFolderPath")
 COPY_AS_IS = ("appearance.json", "community-plugins.json", "hotkeys.json", "types.json")
 SECRET_KEY_RE = re.compile(r"api[_-]?key|token|secret|passw(or)?d|bearer|credential", re.I)
 
@@ -193,19 +199,26 @@ def import_obsidian(source: Path, dest: Path, created: set) -> list:
         write_json(dst / "graph.json", merged)
         report.append("graph.json imported (colour groups and filter stay wiki-specific)")
 
+    copied = set()
     for name in COPY_AS_IS:
         if (src / name).is_file() and not (dst / name).exists():
             shutil.copyfile(src / name, dst / name)
+            copied.add(name)
             report.append(f"{name} copied")
 
-    # active theme only (themes are large)
+    # active theme only (themes are large), and only if this run set the appearance
     theme = (read_json(src / "appearance.json") or {}).get("cssTheme")
-    if theme and (src / "themes" / theme).is_dir() and not (dst / "themes" / theme).exists():
+    if ("appearance.json" in copied and theme and (src / "themes" / theme).is_dir()
+            and not (dst / "themes" / theme).exists()):
         shutil.copytree(src / "themes" / theme, dst / "themes" / theme)
         report.append(f"theme '{theme}' copied")
 
-    # enabled community plugins: code always, data.json only if it holds no credentials
+    # community plugins the destination actually enables: code always, data.json only if it
+    # holds no credentials. A vault that keeps its own plugin list gets no dead plugin folders.
+    enabled = set(read_json(dst / "community-plugins.json") or [])
     for plugin in read_json(src / "community-plugins.json") or []:
+        if plugin not in enabled:
+            continue
         pdir = src / "plugins" / plugin
         if not pdir.is_dir():
             report.append(f"plugin '{plugin}' is enabled but not installed in the source; skipped")
@@ -229,37 +242,109 @@ def strip_code(text: str) -> str:
     return INLINE_CODE_RE.sub("", FENCE_RE.sub("", text))
 
 
-def check(dest: Path) -> list:
-    """Return a list of problems; empty means the vault is consistent."""
-    problems = []
-    md_files = [p for p in dest.rglob("*.md") if ".obsidian" not in p.parts and ".git" not in p.parts]
+def template_paths() -> set:
+    """Vault-relative paths of every file the template ships (dot- names resolved)."""
+    return {Path(*[real_name(p) for p in f.relative_to(TEMPLATE).parts]).as_posix()
+            for f in TEMPLATE.rglob("*") if f.is_file()}
+
+
+WIKI_DIRS = ("wiki", "synthesis", "templates", ".obsidian")
+
+
+def vault_files(dest: Path) -> set:
+    return {p.relative_to(dest).as_posix() for p in dest.rglob("*") if p.is_file() and ".git" not in p.parts}
+
+
+def check(dest: Path, foreign=None) -> tuple[list, list]:
+    """Return (problems, warnings); no problems means the wiki's own files are consistent.
+
+    Issues that only involve files the wiki doesn't own (the user's notes in an existing vault)
+    are warnings, so the self-check never pushes anyone to edit them. `foreign` is the set of
+    files that existed before scaffolding; without it, ownership is inferred from the layout.
+    """
+    if foreign is None:
+        shipped = template_paths()
+        owned = lambda rel: rel.split("/")[0] in WIKI_DIRS or rel in shipped
+    else:
+        owned = lambda rel: rel not in foreign
+    problems, warnings = [], []
+
+    def report(msg, *rels):
+        (problems if any(owned(r) for r in rels) else warnings).append(msg)
+
+    def vault_file(p: Path) -> bool:
+        return p.is_file() and ".obsidian" not in p.parts and ".git" not in p.parts
+
+    md_files = [p for p in dest.rglob("*.md") if vault_file(p)]
     stems = {}
     for p in md_files:
         stems.setdefault(p.stem.lower(), []).append(p.relative_to(dest).as_posix())
     for stem, paths in stems.items():
         if len(paths) > 1:
-            problems.append(f"duplicate note name '{stem}': {', '.join(paths)}")
-    def vault_file(p: Path) -> bool:
-        return p.is_file() and ".obsidian" not in p.parts and ".git" not in p.parts
+            report(f"duplicate note name '{stem}': {', '.join(paths)}", *paths)
 
     all_names = {p.name.lower() for p in dest.rglob("*") if vault_file(p)} | set(stems)
     for p in [*dest.glob(".obsidian/*.json"), *(q for q in dest.rglob("*.json") if vault_file(q))]:
+        rel = p.relative_to(dest).as_posix()
         try:
             json.loads(p.read_text(encoding="utf-8"))
         except ValueError as exc:
-            problems.append(f"invalid JSON {p.relative_to(dest).as_posix()}: {exc}")
+            report(f"invalid JSON {rel}: {exc}", rel)
     for p in md_files:
         rel = p.relative_to(dest).as_posix()
-        text = p.read_text(encoding="utf-8")
+        text = p.read_text(encoding="utf-8", errors="replace")
         for token in sorted(set(TOKEN_RE.findall(text))):
-            problems.append(f"unfilled token {token} in {rel}")
+            report(f"unfilled token {token} in {rel}", rel)
         if rel.startswith("templates/"):
             continue
         for target in sorted(set(WIKILINK_RE.findall(strip_code(text)))):
             name = target.strip().split("/")[-1].lower()
             if name not in all_names:
-                problems.append(f"unresolved wikilink [[{target}]] in {rel}")
-    return problems
+                report(f"unresolved wikilink [[{target}]] in {rel}", rel)
+    return problems, warnings
+
+
+def rule_conflicts(dest: Path) -> list:
+    """Obsidian settings in the vault that contradict what the wiki rules expect (never changed here)."""
+    obs = dest / ".obsidian"
+    want = read_json(TEMPLATE / "dot-obsidian" / "app.json") or {}
+    have = read_json(obs / "app.json")
+    out = []
+    if have is not None:
+        for key in CRITICAL_APP_KEYS:
+            if have.get(key) != want.get(key):
+                now = json.dumps(have[key]) if key in have else "not set"
+                out.append(f"app.json {key} is {now}; the wiki rules need {json.dumps(want.get(key))}")
+    core = read_json(obs / "core-plugins.json")
+    if isinstance(core, dict):
+        off = [p for p in REQUIRED_CORE_PLUGINS if core.get(p) is False]
+    elif isinstance(core, list):
+        off = [p for p in REQUIRED_CORE_PLUGINS if p not in core]
+    else:
+        off = []
+    if off:
+        out.append(f"core plugins the wiki uses are off: {', '.join(off)}")
+    folder = (read_json(obs / "templates.json") or {}).get("folder", "templates")
+    if folder != "templates":
+        out.append(f"templates.json folder is {json.dumps(folder)}; the wiki's templates live in \"templates\"")
+    return out
+
+
+def print_results(problems: list, warnings: list, conflicts: list) -> None:
+    if conflicts:
+        print("Obsidian settings that conflict with the wiki rules (left unchanged; ask before editing):")
+        for line in conflicts:
+            print(f"  - {line}")
+    if warnings:
+        print("Issues in pre-existing files outside the wiki (not the wiki's to fix; leave them alone):")
+        for line in warnings:
+            print(f"  - {line}")
+    if problems:
+        print("Self-check found problems in the wiki's own files:")
+        for line in problems:
+            print(f"  - {line}")
+    else:
+        print("Self-check OK: JSON valid, no unfilled tokens, all wikilinks resolve, note names unique")
 
 
 def main() -> int:
@@ -284,8 +369,9 @@ def main() -> int:
 
     if args.check:
         dest = Path(args.check).expanduser().resolve()
-        problems = check(dest)
-        print("\n".join(problems) if problems else f"OK: {dest} is consistent")
+        problems, warnings = check(dest)
+        print(f"Vault: {dest}")
+        print_results(problems, warnings, rule_conflicts(dest))
         return 1 if problems else 0
 
     if not args.name:
@@ -297,6 +383,8 @@ def main() -> int:
     slug = slugify(args.name)
     dest = Path(args.dest).expanduser().resolve() if args.dest else (Path.cwd() / slug)
     dest.mkdir(parents=True, exist_ok=True)
+    foreign = vault_files(dest)
+    had_obsidian = (dest / ".obsidian").is_dir()
     tokens = {
         "__PROJECT_NAME__": args.name.strip(),
         "__DESCRIPTION__": args.description.strip() or "(add a one-line description)",
@@ -310,20 +398,23 @@ def main() -> int:
         print(f"  created: {rel}")
     for rel in skipped:
         print(f"  skipped (exists): {rel}")
-    source = Path(args.obsidian_from).expanduser().resolve() if args.obsidian_from else (
-        PROFILE if PROFILE.is_dir() and not args.no_profile else None)
+    if args.obsidian_from:
+        source = Path(args.obsidian_from).expanduser().resolve()
+    elif args.no_profile or not PROFILE.is_dir():
+        source = None
+    elif had_obsidian:
+        source = None
+        print("Existing .obsidian found: bundled profile NOT applied, the vault keeps its own setup "
+              f"(to apply it anyway: --obsidian-from \"{PROFILE}\")")
+    else:
+        source = PROFILE
     if source:
         print(f"Obsidian settings from {'bundled profile' if source == PROFILE else source}:")
         for line in import_obsidian(source, dest, set(created)):
             print(f"  - {line}")
-    problems = check(dest)
-    if problems:
-        print("Self-check found problems:")
-        for prob in problems:
-            print(f"  - {prob}")
-        return 1
-    print("Self-check OK: JSON valid, no unfilled tokens, all wikilinks resolve, note names unique")
-    return 0
+    problems, warnings = check(dest, foreign)
+    print_results(problems, warnings, rule_conflicts(dest))
+    return 1 if problems else 0
 
 
 if __name__ == "__main__":

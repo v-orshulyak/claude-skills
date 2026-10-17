@@ -1,6 +1,6 @@
 ---
 type: analysis
-title: "{{title}}"
+title: ""
 aliases: []
 question: ""
 tags: [analysis]

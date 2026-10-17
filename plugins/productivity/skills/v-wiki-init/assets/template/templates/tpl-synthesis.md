@@ -1,6 +1,6 @@
 ---
 type: synthesis
-title: "{{title}}"
+title: ""
 aliases: []
 artifact: report
 audience:

@@ -2,7 +2,7 @@
 
 > __DESCRIPTION__
 
-This vault is an **LLM Wiki** (pattern by Andrej Karpathy). Knowledge is compiled once into interlinked Markdown pages and kept current, instead of being re-derived from raw documents on every question. The human curates sources and asks questions; **you** do the summarising, cross-referencing, filing and bookkeeping. The vault is always opened in **Obsidian**, so everything here must work as an Obsidian vault.
+This vault is an **LLM Wiki** (pattern by Andrej Karpathy): knowledge is compiled once into interlinked Markdown pages and kept current, instead of being re-derived from raw documents on every question. The human curates sources and asks questions; **you** do the summarising, cross-referencing, filing and bookkeeping. The vault is opened in **Obsidian**, so everything must work as an Obsidian vault.
 
 Start every session by reading [[index]] (what exists) and the tail of [[log]] (what happened recently).
 
@@ -20,43 +20,27 @@ _Tailor this section to the project (filled in when the vault was created; refin
 | Layer | Folder | Owner | Rule |
 |---|---|---|---|
 | 1. Raw sources | `raw/` (`raw/assets/` for images and attachments) | Human | **Immutable.** Read, never edit, rename, move or delete. Source of truth. |
-| 2. Wiki | `wiki/` | You | You own it completely. Humans read it; you write it. |
-| 3. Synthesis | `synthesis/` | You, on request | Artifacts generated *from* the wiki. Only when the user asks. Downstream of the wiki, never the other way round. |
-| Schema | this file, `templates/` | Both | Co-evolved. Propose changes to the user before editing them. |
-
-```
-raw/                     originals (PDFs, clippings, exports) + raw/assets/
-wiki/
-  index.md               catalog of every wiki page (you maintain)
-  log.md                 append-only chronological record (you maintain)
-  overview.md            the evolving big picture / current thesis
-  sources/               one summary page per ingested raw source
-  entities/              people, organisations, products, places, ...
-  concepts/              ideas, methods, themes, terms
-  analyses/              saved query answers, comparisons, investigations
-synthesis/               generated artifacts + synthesis-index.md
-templates/               one Obsidian template per page type
-```
+| 2. Wiki | `wiki/`: `index.md`, `log.md`, `overview.md` (the evolving big picture) and `sources/`, `entities/`, `concepts/`, `analyses/` | You | You own it completely. Humans read it; you write it. |
+| 3. Synthesis | `synthesis/` (catalog: `synthesis-index.md`) | You, on request | Artifacts generated *from* the wiki. Only when the user asks. Downstream of the wiki, never the other way round. |
+| Schema | this file, `templates/` (one per page type) | Both | Co-evolved. Propose changes to the user before editing them. |
 
 ## Obsidian link rules
 
 Links are what turn a pile of notes into a wiki, and Obsidian's backlinks, graph view and rename-safety all depend on them being written correctly.
 
-1. **Internal links are always wikilinks:** `[[note-name]]`, with display text when needed: `[[note-name|display text]]`. Never use `[text](path.md)` for notes in the vault. External URLs use normal Markdown links.
+1. **Internal links are always wikilinks:** `[[note-name]]`, with display text when needed: `[[note-name|display text]]`. Never use `[text](path.md)` for notes in the vault. External URLs use normal Markdown links. Write link syntax *examples* inside backticks, or Obsidian shows them as ghost nodes in the graph.
 2. **Note names are globally unique.** The filename (minus `.md`) is the identity. Check that a name is free before creating a page. Link by name only (`[[attention-mechanism]]`), never by folder path, so links survive moves. Obsidian is configured with "shortest path" links and auto-update on rename.
 3. **Link to a heading or block** with `[[note-name#Heading]]` or `[[note-name#^block-id]]`. Link to a PDF page with `[[paper.pdf#page=12]]`. Embed with `![[file]]`.
 4. **Every page links out and is linked in.** Each page needs at least one outgoing link to a related page and at least one inbound link (from [[index]] at minimum). A page with no inbound links is an orphan; fix it.
 5. **Link on first meaningful mention** of an entity or concept that has (or deserves) a page. Do not link every occurrence.
 6. **Unresolved links are a to-do list, not a mistake**, but only deliberately: if you link `[[x]]` to a page that doesn't exist yet, create it in the same pass or record it under "Gaps" in [[overview]].
 7. **Wikilinks inside YAML frontmatter must be quoted:** `sources: ["[[some-source]]"]`.
-8. **Examples of link syntax in documentation go inside backticks or code fences**, otherwise Obsidian shows them as unresolved ghost nodes in the graph.
 
 ## Naming and frontmatter
 
 - Filenames: lowercase kebab-case ASCII (`attention-mechanism.md`, `2024-03-board-meeting.md`). They must be valid on macOS **and** Windows: no `\ / : * ? " < > |`, no trailing dot or space, no Windows-reserved names (`con`, `nul`, `aux` ...), and no two files whose names differ only by case.
-- Put the human-readable title in frontmatter `title:` and variants in `aliases:` so Obsidian's link autocomplete finds the page under any name.
-- Every wiki and synthesis page starts with YAML frontmatter (see `templates/`). Common fields: `type`, `title`, `aliases`, `tags`, `created`, `updated`, `status`. Always bump `updated` when you change a page.
-- Dates are ISO `YYYY-MM-DD`.
+- Put the human-readable title in frontmatter `title:` (the templates leave it blank) and variants in `aliases:` so Obsidian's link autocomplete finds the page under any name.
+- Every wiki and synthesis page starts with YAML frontmatter (see `templates/`). Common fields: `type`, `title`, `aliases`, `tags`, `created`, `updated`, `status`. Dates are ISO `YYYY-MM-DD`. Always bump `updated` when you change a page.
 - `status`: `draft` (thin or unverified), `stable`, or `stale` (a newer source contradicts or supersedes it).
 
 ## Page types (use the matching file in `templates/`)
@@ -98,10 +82,6 @@ Links are what turn a pile of notes into a wiki, and Obsidian's backlinks, graph
 
 Report first, fix on the user's go-ahead. Look for: contradictions; stale claims superseded by newer sources; orphan pages; mentioned-but-missing pages (unresolved links); pages missing frontmatter, `updated` or sources; `(unsourced)` claims; duplicate or near-duplicate pages; index entries that are missing or dead; synthesis artifacts older than the pages they are based on; and gaps a web search or new source could fill. Suggest 3-5 next questions or sources. Log the pass.
 
-### Synthesize (user asks for an artifact)
-
-See the next section.
-
 ## Synthesis layer (`synthesis/`)
 
 The wiki answers "what do we know?". The synthesis layer holds **things made from that knowledge**: reports, briefs, decks, FAQs, timelines, comparison tables, study guides, drafts of articles, anything the user asks to be produced.
@@ -131,14 +111,11 @@ Rules:
 
 ## Environment: macOS and Windows
 
-This vault is used from both macOS and Windows (and works on Linux). Therefore:
+This vault is used from both macOS and Windows (and works on Linux):
 
-- Assume nothing about the shell. Check the OS before suggesting commands; [[TOOLS]] lists install and usage for both (`zsh`/`bash` vs PowerShell).
-- Use forward slashes in links and paths inside notes; never absolute paths or drive letters.
-- Keep filenames portable (see "Naming"). Don't create symlinks. Keep paths short.
+- Check the OS before suggesting commands; [[TOOLS]] covers install and usage for both (`zsh`/`bash` vs PowerShell). Never make a workflow depend on a Unix-only tool without a Windows alternative.
+- Use forward slashes in links and paths inside notes; never absolute paths, drive letters or symlinks. Keep paths short.
 - Files use LF line endings (`.gitattributes` enforces this). Don't convert them.
-- Prefer tools that exist on both platforms. Never make a workflow depend on a Unix-only tool without a Windows alternative.
-- Search and PDF tooling is optional but recommended; see [[TOOLS]].
 
 ## Evolving these rules
 

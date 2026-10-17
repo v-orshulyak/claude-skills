@@ -1,8 +1,9 @@
-# Obsidian per-machine state (keep app.json, templates.json, graph.json, bookmarks.json)
+# Obsidian per-machine state. Settings (app.json, templates.json, graph.json, bookmarks.json)
+# and plugin settings (plugins/*/data.json) are committed so a clone looks the same.
+# If a plugin ever stores an API key, add its data.json here.
 .obsidian/workspace.json
 .obsidian/workspace-mobile.json
 .obsidian/cache
-.obsidian/plugins/*/data.json
 .trash/
 
 # OS noise

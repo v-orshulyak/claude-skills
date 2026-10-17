@@ -1,6 +1,6 @@
 ---
 type: source
-title: "{{title}}"
+title: ""
 aliases: []
 kind: article
 author:

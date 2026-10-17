@@ -1,6 +1,6 @@
 ---
 type: concept
-title: "{{title}}"
+title: ""
 aliases: []
 tags: [concept]
 created: "{{date:YYYY-MM-DD}}"

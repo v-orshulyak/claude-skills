@@ -1,6 +1,6 @@
 ---
 type: entity
-title: "{{title}}"
+title: ""
 aliases: []
 kind:
 tags: [entity]
