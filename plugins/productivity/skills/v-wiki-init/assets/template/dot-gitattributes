@@ -1,0 +1,11 @@
+# Same line endings on macOS and Windows -> no whole-file diffs
+* text=auto eol=lf
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.pptx binary
+*.xlsx binary
+*.docx binary

@@ -1,0 +1,9 @@
+{
+  "items": [
+    { "type": "file", "path": "wiki/index.md", "title": "Index" },
+    { "type": "file", "path": "wiki/overview.md", "title": "Overview" },
+    { "type": "file", "path": "wiki/log.md", "title": "Log" },
+    { "type": "file", "path": "synthesis/synthesis-index.md", "title": "Synthesis" },
+    { "type": "file", "path": "CLAUDE.md", "title": "Rules (CLAUDE.md)" }
+  ]
+}

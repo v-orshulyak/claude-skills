@@ -1,0 +1,31 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "v-skills",
+  "owner": {
+    "name": "Vlad Orshulyak",
+    "email": "vlad.orshulyak@sombrainc.com"
+  },
+  "metadata": {
+    "description": "Vlad's personal Claude Code plugins and skills. Every skill is prefixed with v-."
+  },
+  "plugins": [
+    {
+      "name": "productivity",
+      "source": "./plugins/productivity",
+      "description": "Personal productivity skills.",
+      "category": "productivity"
+    },
+    {
+      "name": "engineering",
+      "source": "./plugins/engineering",
+      "description": "Software engineering skills.",
+      "category": "development"
+    },
+    {
+      "name": "finances",
+      "source": "./plugins/finances",
+      "description": "Personal finance skills.",
+      "category": "productivity"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "search": "-path:templates",
+  "showTags": false,
+  "showAttachments": false,
+  "hideUnresolved": false,
+  "showOrphans": true,
+  "colorGroups": [
+    { "query": "path:wiki/sources", "color": { "a": 1, "rgb": 9342611 } },
+    { "query": "path:wiki/entities", "color": { "a": 1, "rgb": 16096779 } },
+    { "query": "path:wiki/concepts", "color": { "a": 1, "rgb": 5020415 } },
+    { "query": "path:wiki/analyses", "color": { "a": 1, "rgb": 3462041 } },
+    { "query": "path:synthesis", "color": { "a": 1, "rgb": 16020150 } },
+    { "query": "file:index OR file:overview OR file:log", "color": { "a": 1, "rgb": 10980346 } }
+  ]
+}

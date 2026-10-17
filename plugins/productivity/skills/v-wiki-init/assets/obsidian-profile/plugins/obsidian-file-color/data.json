@@ -1,0 +1,72 @@
+{
+  "cascadeColors": false,
+  "colorBackground": false,
+  "palette": [
+    {
+      "id": "iuAnBdIUO6lC9FwKWcg6y",
+      "name": "red",
+      "value": "#e25050"
+    },
+    {
+      "id": "5cQ7t4zD40rrOTwRBLrkJ",
+      "name": "purple",
+      "value": "#6fcea1"
+    },
+    {
+      "id": "bmJlzhD89u7qhg2-xOlLi",
+      "name": "light purple",
+      "value": "#ab7ec4"
+    },
+    {
+      "id": "_d6vwqtIp7tYO_KDcipKe",
+      "name": "blue",
+      "value": "#4691e2"
+    },
+    {
+      "id": "rWK7ikQZ_9IvT-fIEIh5M",
+      "name": "amber",
+      "value": "#ffae00"
+    },
+    {
+      "id": "OlTd2c6do3Im_AmiYrUIr",
+      "name": "green",
+      "value": "#1fbd00"
+    },
+    {
+      "id": "OIGlsyo0wKJGISdlO-fOx",
+      "name": "dark red",
+      "value": "#df2020"
+    },
+    {
+      "id": "H-XKqrpNraEoN2nqqRuM0",
+      "name": "dark purple",
+      "value": "#a947d7"
+    },
+    {
+      "id": "zJw8N_VesIjnCt39NjbPh",
+      "name": "dark blue",
+      "value": "#1d5bbf"
+    },
+    {
+      "id": "0JPvvo39W-tJLGmeqRsDw",
+      "name": "brown",
+      "value": "#b97b41"
+    },
+    {
+      "id": "90emuIaM-n6Ez7GL2FVgQ",
+      "name": "dark green",
+      "value": "#65c153"
+    },
+    {
+      "id": "q9l_6YdLYNcODcyTS50Ci",
+      "name": "White",
+      "value": "#ffffff"
+    },
+    {
+      "id": "UB9LTF2EQ9-ODE2LCUvxP",
+      "name": "",
+      "value": "#737373"
+    }
+  ],
+  "fileColors": []
+}

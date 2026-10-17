@@ -1,0 +1,14 @@
+{
+  "useMarkdownLinks": false,
+  "newLinkFormat": "shortest",
+  "alwaysUpdateLinks": true,
+  "attachmentFolderPath": "raw/assets",
+  "newFileLocation": "folder",
+  "newFileFolderPath": "wiki/concepts",
+  "propertiesInDocument": "visible",
+  "readableLineLength": true,
+  "promptDelete": true,
+  "userIgnoreFilters": [
+    "templates/"
+  ]
+}
