@@ -1,5 +1,4 @@
 {
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "v-skills",
   "owner": {
     "name": "Vlad Orshulyak",
