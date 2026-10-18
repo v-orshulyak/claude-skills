@@ -11,8 +11,10 @@ A personal Claude Code plugin marketplace named **`v-skills`**. There is no buil
 ```
 .claude-plugin/marketplace.json        # marketplace "v-skills"; lists every plugin by relative source
 plugins/<plugin>/.claude-plugin/plugin.json
-plugins/<plugin>/skills/<v-skill>/SKILL.md   (+ optional references/, scripts)
+plugins/<plugin>/skills/<v-skill>/SKILL.md   (+ README.md, optional references/, scripts)
 ```
+
+Every skill has a `README.md` for humans (what it is, what problem it solves, when to use it, then maintainer notes such as test commands); keep model-facing instructions in `SKILL.md`. The root `README.md` has a table of all skills; update it when adding, renaming or moving a skill.
 
 Current plugins: `productivity` (`v-wiki-init`, `v-retro`, `v-grill`, `v-handoff`), `engineering` (`v-dotnet-as-java`), `finances` (empty). Empty plugins keep a `skills/.gitkeep` placeholder.
 
