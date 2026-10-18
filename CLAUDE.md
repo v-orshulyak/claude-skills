@@ -40,19 +40,14 @@ After editing a skill, `claude plugin marketplace update v-skills` (or reinstall
 
 ## Git identity
 
-**Every commit in this repo must be authored from the personal GitHub account**, never the work identity that is set globally:
+**Every commit in this repo must be authored from the personal GitHub account**, whatever identity is set globally:
 
 - user.name `v-orshulyak`, user.email `vladorshulyak@gmail.com`
 - The identity is set in this repo's local git config (`git config --local`). If `git config --local user.email` is empty, set both before committing; do not rely on or change the global config.
 - Verify before pushing: `git log -1 --format='%an <%ae>'` must print `v-orshulyak <vladorshulyak@gmail.com>`.
-- The remote `origin` is `https://github.com/v-orshulyak/claude-skills.git`; push with credentials for the `v-orshulyak` account, not the work one.
-- **Switch `gh` to the personal account before any push or other GitHub operation on this repo**, and switch back to the work account (`OnLocation-Vorshulyak-Contractor`) when done, because the active `gh` account applies to every repo on the machine:
-  1. `gh auth switch --user v-orshulyak`
-  2. Check `gh auth status` shows `v-orshulyak` as active.
-  3. Push: `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push origin main` (plain `git push` uses the macOS keychain, not `gh`, so it may authenticate as the wrong account).
-  4. `gh auth switch --user OnLocation-Vorshulyak-Contractor`
-  
-  The switch changes the user's global auth state, so tell the user before doing it; never run `gh auth login` yourself (it is interactive and needs their browser).
+- The remote `origin` is `https://github.com/v-orshulyak/claude-skills.git`; push with credentials for the `v-orshulyak` account.
+- Never run `gh auth login` yourself (it is interactive and needs the user's browser).
+- On a machine that also has other GitHub accounts, `CLAUDE.local.md` (git-ignored, per machine) says how to switch accounts for a push and back. Without that file, assume `v-orshulyak` is the only account and push normally.
 
 ## Notes
 
