@@ -12,6 +12,18 @@ claude plugin install engineering@v-skills
 
 Plugins are copied to a cache on install. After the repo changes, run `claude plugin marketplace update v-skills` to pick up the new version.
 
+### Or copy the skills straight into `~/.claude/skills`
+
+The marketplace cache refreshes rarely. To use the current checkout right away, mirror every skill into your personal skills folder (they then load in every project, no install step):
+
+```bash
+python3 scripts/sync_skills.py --dry-run   # preview
+python3 scripts/sync_skills.py             # copy new and changed files, remove files the repo dropped
+python3 scripts/sync_skills.py --prune     # also remove v-* skills deleted from the repo
+```
+
+On Windows use `py` instead of `python3`. Run it after each change you want live, and start a new Claude Code session to pick it up. Skills show up as `/v-grill` rather than `/productivity:v-grill`. Use either this or the plugin install, not both, or each skill is listed twice. Folders that are not `v-*` skills from this repo are never touched.
+
 ## Skills
 
 | Plugin | Skill | What it does | Runs |
@@ -32,6 +44,7 @@ Each skill's README explains what it is, what problem it solves and when to use 
 plugins/<plugin>/.claude-plugin/plugin.json
 plugins/<plugin>/skills/<v-skill>/SKILL.md       # what Claude reads when the skill runs
 plugins/<plugin>/skills/<v-skill>/README.md      # what it is, when to use it, maintainer notes
+scripts/sync_skills.py                           # mirrors all skills into ~/.claude/skills
 ```
 
 Validate the manifests with `claude plugin validate .` (marketplace) and `claude plugin validate plugins/<plugin>` (one plugin).

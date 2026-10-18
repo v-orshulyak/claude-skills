@@ -36,7 +36,9 @@ claude plugin marketplace add .          # register this checkout locally as "v-
 claude plugin install <plugin>@v-skills  # install a plugin from it
 ```
 
-After editing a skill, `claude plugin marketplace update v-skills` (or reinstall) picks up the change; plugins are copied to a cache on install.
+After editing a skill, `claude plugin marketplace update v-skills` (or reinstall) picks up the change; plugins are copied to a cache on install, and the marketplace refreshes rarely.
+
+To make the current checkout live at once, `python3 scripts/sync_skills.py` (`py` on Windows; `--dry-run`, `--prune`, `--dest DIR`) mirrors every `plugins/*/skills/v-*` folder into `~/.claude/skills`. It is stdlib Python, touches only those folders (and, with `--prune`, stale `v-*` ones), and is meant as an alternative to the plugin install, not an addition (both together list each skill twice). Test it with `--dest <scratch dir>`. It requires every skill folder to start with `v-`; `v-handoff` reads `../v-retro/scripts/` and the flat target layout keeps that working.
 
 ## Git identity
 
