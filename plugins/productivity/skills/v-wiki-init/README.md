@@ -53,7 +53,7 @@ You can also run it inside an existing Obsidian vault. It never overwrites files
 2. Open the folder in Claude Code and accept the folder-trust prompt, so the skills and hooks load.
 3. Add a first source ("Save this article: <url>", or drop a file into `raw/`) and say "Ingest `raw/<file>`". About every 10 ingests, say "Health-check the wiki".
 
-Prerequisites: Python 3.9+ (the scaffold and the vault's hooks and scripts use it), and Git for Windows on Windows (Claude Code runs hooks through Git Bash). The skill checks both and offers to install them. Git itself is optional, and best avoided for a vault in OneDrive, iCloud or Dropbox.
+Prerequisites: Python 3.9+ (the scaffold and the vault's hooks and scripts use it), and Git for Windows on Windows (Claude Code runs hooks through Git Bash). The skill checks both before creating anything and offers to install what is missing (`brew` on macOS, `winget` on Windows). If you decline or the install fails, it stops without creating a vault and lists what you need to install. Git itself is optional, and best avoided for a vault in OneDrive, iCloud or Dropbox.
 
 ## Maintainer notes
 
@@ -82,6 +82,8 @@ Worth covering after a change: a fresh vault (with and without `--no-profile`), 
 ### Vault skills, hooks, rules and agents
 
 - Python 3.9+ is a prerequisite: SKILL.md step 3 checks it (and Git Bash on Windows) before scaffolding and offers the install; `TOOLS.md` lists both under "Required". Git is optional and not suggested for vaults in a sync folder.
+- There is deliberately no hand-built fallback: if Python (or Git Bash on Windows) is missing and the user declines the install, SKILL.md step 3 blocks before creating anything. A Windows run that hand-wrote the vault into the real folder crashed half-way, left a partial `.obsidian` (so the profile was skipped later) and made cleanup look destructive.
+- After installing Python in the same session, the scaffold runs by the interpreter's full path (macOS `$(brew --prefix)/bin/python3`, Windows `%LOCALAPPDATA%\Programs\Python\Python3*\python.exe`), since the shell's PATH is stale; the hooks need a restarted Claude Code, and the hand-over asks the user to confirm them with `/hooks`. The macOS path is untested.
 - The template ships six project skills in `dot-claude/skills/` (becomes `.claude/skills/`): `wiki-capture`, `wiki-ingest`, `wiki-research`, `wiki-synthesize` (procedures only), `wiki-lint` (+ `scripts/lint.py`) and `wiki-refactor` (+ `scripts/refactor.py`, which imports lint.py for parsing). They are deliberately vault-local rather than skills in this plugin: the vault stays self-contained (works on a clone without the plugin), and each vault's rules can evolve with its user, like its `CLAUDE.md`. The cost is that a fix here reaches only vaults scaffolded afterwards; copy the files into older vaults by hand.
 - The vault's `CLAUDE.md` keeps a 1-2 line summary of each workflow and points at the `SKILL.md`, so agents without skill support still find the procedure.
 - `wiki-ingest` calls the sibling `../wiki-lint/scripts/lint.py` (`--new-sources`, `--names`, `--files`, plain lint) rather than shipping a second script.

@@ -52,21 +52,27 @@ Also mention, in the same message, the default destination (`./<slug>` under the
 - If the vault already has a `.claude/settings.json`, the script keeps it and says the wiki's hooks are not active. Offer to merge the `hooks` and `permissions` from the template's `dot-claude/settings.json` into it; edit only on their yes.
 - A vault under OneDrive, iCloud Drive (`Mobile Documents`) or Dropbox is fine and common: the sync service then provides version history, so git is not needed. Mention only that the same vault should not also be put under git, since the two fight over files.
 
-### 3. Check Python, then run the scaffold script
+### 3. Check the required tools, then run the scaffold script
 
-Python 3.9+ is a prerequisite, not an optional tool: the scaffold, and later the vault's hooks (`raw/` guard, session brief, end-of-turn check) and its lint, refactor and source-size scripts all run on it. Check it first:
+Two tools are required, not optional, because the vault is useless without them: **Python 3.9+** (the scaffold, and later the vault's hooks, lint, refactor and source-size scripts) and, on Windows only, **Git Bash** (Claude Code runs hook commands through it and falls back to PowerShell, which cannot run them, so every hook would error). Check both before creating anything.
+
+**Python:**
 
 - macOS/Linux: `python3 --version`. On a Mac without the Command Line Tools this may open an install dialog for them, which is one valid way to get Python.
 - Windows (PowerShell): `py --version`, then `python --version`. A `python` or `python3` that only prints "Python was not found" or opens the Microsoft Store is the Store stub, not Python.
 
-If none reports 3.9 or newer, say so and offer to install it, running the command only on their yes:
+**Git Bash (Windows only):** `C:\Program Files\Git\bin\bash.exe` exists, or `git` resolves to a Git for Windows install. A `bash` in `C:\Windows\System32` is WSL and doesn't count. The vault does not have to use git itself.
 
-- macOS: `brew install python` (or `xcode-select --install` for the Command Line Tools' `python3`).
-- Windows: `winget install --id Python.Python.3.13` (or `scoop install python`). The `py` launcher comes with it.
+If something is missing or too old, tell the user which tool and why, and offer to install it, running the command only on their yes:
 
-After an install a new terminal is needed; if `python3`/`py` is still not found, ask the user to restart Claude Code. If they decline, create the vault by hand from `assets/template/` (mapping `dot-X` to `.X`, filling the tokens yourself), say you did, and warn that the hooks will stay inactive and lint, refactor and size estimation won't run until Python is installed.
+- Python on macOS: `brew install python` (or `xcode-select --install` for the Command Line Tools' `python3`).
+- Python on Windows: `winget install --id Python.Python.3.13` (or `scoop install python`). The `py` launcher comes with it.
+- Git Bash on Windows: `winget install --id Git.Git`.
+- No package manager (`brew` / `winget`) available: give the download page (python.org, git-scm.com) instead.
 
-On Windows, also check for Git Bash: `Get-Command git`, or whether `C:\Program Files\Git\bin\bash.exe` exists (a `bash` in `C:\Windows\System32` is WSL and doesn't count). Claude Code runs hook commands through Git Bash and falls back to PowerShell, which cannot run them. Git for Windows provides it (`winget install --id Git.Git`); installing it does not mean the vault has to use git. Offer it the same way; without it every hook reports an error on that machine (it is the one case the launcher cannot soften).
+**Install or block, never work around it.** Do not create a vault by hand, with a partial tree or without hooks. If the user declines, or an install fails, stop here: create nothing, list exactly what is missing and the command or download for each, and say to run `/v-wiki-init` again once it is installed.
+
+After an install the current shell may not see the new PATH. Verify with the interpreter's full path and run the scaffold with it instead of stopping to restart: macOS `"$(brew --prefix)/bin/python3"`, Windows `$env:LOCALAPPDATA\Programs\Python\Python3*\python.exe` (newest folder). Confirm with `--version` first. The vault's hooks only find the new tools in a new Claude Code session, so tell the user to restart Claude Code before relying on them (step 6).
 
 Then run the scaffold:
 
@@ -108,7 +114,7 @@ Offer the install commands for the missing ones, and run them only if the user s
 Show a compact tree of what was created (from the script's file list) and anything it skipped or flagged. Then give the three next steps, briefly:
 
 1. In Obsidian: **Open folder as vault** -> the new folder. Accept "trust author / turn on community plugins" once, so the bundled plugins and settings load.
-2. Open the vault folder in Claude Code and accept the folder-trust prompt, so the rules, skills and hooks load. If Python is missing on a machine that opens the vault later, the session brief says so instead of the hooks failing on every action. Other agents that read `AGENTS.md` get the rules and skill procedures, but not the hooks.
+2. Open the vault folder in Claude Code (a new session; restart it if Python was installed just now) and accept the folder-trust prompt, so the rules, skills and hooks load. Run `/hooks` there to confirm the four wiki hooks (SessionStart, UserPromptSubmit, PreToolUse, Stop) are listed. Don't tell the user the hooks are active until you have seen that, or the session brief; you can only vouch for them in a session you started inside the vault. If Python is missing on a machine that opens the vault later, the session brief says so instead of the hooks failing on every action. Other agents that read `AGENTS.md` get the rules and skill procedures, but not the hooks.
 3. Drop a first source into `raw/` (or use the Obsidian Web Clipper, or say "Save this article: <url>") and say: "Ingest `raw/<file>`". Every ~10 ingests, say "Health-check the wiki".
 
 Git is optional. Don't suggest it for a vault in OneDrive, iCloud or Dropbox (the sync service keeps file history). Elsewhere, offer `git init` rather than doing it; the template already ships `.gitignore` and `.gitattributes` (LF endings, so Windows and macOS don't produce noisy diffs; plugin settings are committed so a clone looks the same).
